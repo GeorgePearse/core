@@ -14,7 +14,7 @@ terraform {
 
   backend "gcs" {
     bucket = "genesis-tf-state-visdet-482415"
-    prefix = "terraform/state"
+    prefix = "infrastructure/genesis/state"
   }
 }
 
