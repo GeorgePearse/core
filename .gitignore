@@ -15,7 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -178,14 +177,15 @@ results/
 *.log
 
 # Terraform
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.backup
-terraform/.terraform.lock.hcl
-terraform/terraform.tfvars
+infrastructure/**/.terraform/
+infrastructure/**/*.tfstate
+infrastructure/**/*.tfstate.backup
+infrastructure/**/.terraform.lock.hcl
+infrastructure/**/terraform.tfvars
 
 # Rust
-genesis_rust_backend/target/
+lib/rust/target/
+projects/squeeze/target/
 
 # SQLx offline cache (committed intentionally, but gitignore target)
 # genesis_rust_backend/.sqlx/
