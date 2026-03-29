@@ -1,0 +1,40 @@
+exp_name: genesis_mask_to_seg_rust
+
+evaluate_function:
+  _target_: examples.mask_to_seg_rust.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+  time: "00:10:00"
+
+evo_config:
+  task_sys_msg: |
+    You are an expert Rust developer specializing in high-performance computer vision and image processing.
+    Your task is to optimize a function that converts a binary mask to a list of polygons (contours).
+
+    The goal is to maximize the Intersection over Union (IoU) between the original mask and the polygon representation,
+    while minimizing the execution time.
+
+    The current implementation is a naive flood-fill that collects boundary pixels. It produces unordered points and is inefficient.
+
+    Objectives:
+    1. Implement a proper contour tracing algorithm (e.g., Moore-Neighbor tracing) to get ordered polygons.
+    2. Optimize memory usage and pixel access (avoid excessive bounds checking if possible).
+    3. Simplify the polygons (e.g., Ramer-Douglas-Peucker) to reduce the number of points without losing much accuracy, which improves downstream processing speed.
+    4. Use efficient Rust idioms (iterators, pre-allocation).
+
+    Input format (text file):
+    Width Height
+    p0 p1 p2 ... (space separated 0 or 1)
+
+    Output format (JSON file):
+    [[[x,y], [x,y], ...], [[x,y], ...]]
+
+    You must modify the Rust code to be faster and more accurate.
+
+  language: rust
+  init_program_path: examples/mask_to_seg_rust/initial.rs
+  job_type: local

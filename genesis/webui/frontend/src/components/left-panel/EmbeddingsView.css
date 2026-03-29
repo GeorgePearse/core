@@ -1,0 +1,121 @@
+.embeddings-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d1117;
+}
+
+.embeddings-view.empty {
+  align-items: center;
+  justify-content: center;
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.embeddings-controls {
+  padding: 16px 20px;
+  background-color: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+
+.embeddings-controls .control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.embeddings-controls .control-group:last-child {
+  margin-bottom: 0;
+}
+
+.embeddings-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c9d1d9;
+  font-size: 13px;
+}
+
+.embeddings-controls select,
+.embeddings-controls input[type="number"] {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.embeddings-controls select:hover,
+.embeddings-controls input[type="number"]:hover {
+  border-color: #484f58;
+}
+
+.embeddings-controls select:focus,
+.embeddings-controls input[type="number"]:focus {
+  border-color: #58a6ff;
+  outline: none;
+}
+
+.embeddings-controls input[type="range"] {
+  accent-color: #58a6ff;
+  width: 100px;
+}
+
+.embeddings-controls h4 {
+  margin: 0 0 10px 0;
+  color: #e6edf3;
+}
+
+.info-text {
+  color: #8b949e;
+  font-size: 13px;
+  margin: 0;
+}
+
+.embeddings-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+
+.embeddings-container {
+  background-color: #0d1117;
+}
+
+.embeddings-container h4 {
+  color: #e6edf3;
+  text-align: center;
+  margin: 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subplots-container {
+  background-color: #0d1117;
+}
+
+/* Custom scrollbar */
+.embeddings-view::-webkit-scrollbar,
+.embeddings-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.embeddings-view::-webkit-scrollbar-track,
+.embeddings-container::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.embeddings-view::-webkit-scrollbar-thumb,
+.embeddings-container::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+}
+
+.embeddings-view::-webkit-scrollbar-thumb:hover,
+.embeddings-container::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}

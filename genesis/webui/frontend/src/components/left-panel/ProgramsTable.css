@@ -1,0 +1,169 @@
+.programs-table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #0d1117;
+}
+
+.table-controls {
+  padding: 16px 20px;
+  border-bottom: 1px solid #21262d;
+  background-color: #161b22;
+  flex-shrink: 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #c9d1d9;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+.programs-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+}
+
+.programs-table th,
+.programs-table td {
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid #21262d;
+}
+
+.programs-table th {
+  background-color: #161b22;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.programs-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.programs-table th.sortable:hover {
+  background-color: #1f2937;
+  color: #e6edf3;
+}
+
+.programs-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.programs-table tbody tr td {
+  color: #e6edf3;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 13px;
+}
+
+.programs-table tbody tr:nth-child(even) {
+  background-color: rgba(22, 27, 34, 0.5);
+}
+
+.programs-table tbody tr:hover {
+  background-color: #1f2937;
+}
+
+.programs-table tbody tr.selected {
+  background-color: #1e3a5f !important;
+  border-left: 3px solid #3b82f6;
+}
+
+.programs-table tbody tr.selected td:first-child {
+  padding-left: 13px;
+}
+
+.programs-table tbody tr.incorrect {
+  background-color: rgba(248, 81, 73, 0.1);
+}
+
+.programs-table tbody tr.incorrect:hover {
+  background-color: rgba(248, 81, 73, 0.2);
+}
+
+.programs-table tbody tr.incorrect td {
+  color: #f0a8a8;
+}
+
+/* Column-specific styling */
+.programs-table td:first-child {
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.patch-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #58a6ff !important;
+}
+
+.model-cell {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #7ee787 !important;
+  font-size: 12px;
+}
+
+/* Score highlighting */
+.programs-table tbody tr td:nth-child(6) {
+  color: #ffa657;
+  font-weight: 600;
+}
+
+/* Cost column */
+.programs-table tbody tr td:nth-child(7) {
+  color: #a5d6ff;
+}
+
+/* Complexity column */
+.programs-table tbody tr td:nth-child(8) {
+  color: #d2a8ff;
+}
+
+/* Custom scrollbar */
+.table-wrapper::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}

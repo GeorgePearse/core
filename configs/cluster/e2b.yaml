@@ -1,0 +1,45 @@
+# @package _global_
+# E2B Cloud Sandbox Configuration
+#
+# This configuration enables running Genesis evaluations in E2B cloud sandboxes.
+# E2B provides isolated, ephemeral environments for code execution.
+#
+# Prerequisites:
+# 1. Set E2B_API_KEY in your .env file
+# 2. Install e2b package: pip install e2b
+#
+# Benefits:
+# - Highly parallel execution (each job runs in its own sandbox)
+# - Isolated environments prevent interference between jobs
+# - No local resource constraints
+# - Automatic cleanup of sandbox environments
+
+job_config:
+  _target_: genesis.launch.E2BJobConfig
+  # Override this in variant config for task-specific evaluator
+  eval_program_path: evaluate.py
+
+  # E2B sandbox template to use
+  # Options: "base" (Python), or custom templates you've created
+  template: "base"
+
+  # Sandbox timeout in seconds (max time for each evaluation)
+  timeout: 300
+
+  # Python dependencies to install in each sandbox
+  # These are installed via pip before running the evaluation
+  # NOTE: genesis-evolve is not on PyPI - use standalone evaluators
+  dependencies:
+    - numpy
+
+  # Additional files to upload to the sandbox
+  # Map of sandbox_path -> local_path
+  additional_files: {}
+
+  # Environment variables to set in the sandbox
+  env_vars: {}
+
+evo_config:
+  job_type: "e2b"
+  # E2B supports high parallelism - adjust based on your E2B plan limits
+  max_parallel_jobs: 10

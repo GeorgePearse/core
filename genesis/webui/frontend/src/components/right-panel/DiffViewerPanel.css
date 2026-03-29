@@ -1,0 +1,107 @@
+.diff-viewer-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.diff-viewer-panel.empty {
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.diff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.diff-header h4 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.diff-stats {
+  display: flex;
+  gap: 15px;
+}
+
+.diff-stats .stat {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.diff-stats .additions {
+  color: #22863a;
+}
+
+.diff-stats .deletions {
+  color: #cb2431;
+}
+
+.diff-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.diff-content {
+  flex: 1;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier,
+    monospace;
+  font-size: 12px;
+}
+
+.diff-line {
+  display: flex;
+  line-height: 1.5;
+}
+
+.diff-line.added {
+  background-color: #e6ffed;
+}
+
+.diff-line.removed {
+  background-color: #ffeef0;
+}
+
+.diff-line.unchanged {
+  background-color: #fff;
+}
+
+.diff-marker {
+  width: 20px;
+  padding: 0 5px;
+  text-align: center;
+  user-select: none;
+  color: #999;
+}
+
+.diff-line.added .diff-marker {
+  color: #22863a;
+  background-color: #cdffd8;
+}
+
+.diff-line.removed .diff-marker {
+  color: #cb2431;
+  background-color: #ffdce0;
+}
+
+.diff-line pre {
+  margin: 0;
+  padding: 0 10px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  flex: 1;
+}

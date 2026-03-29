@@ -1,0 +1,33 @@
+evo_config:
+  _target_: genesis.core.EvolutionConfig
+  patch_types:
+    - "diff"
+    - "full"
+    - "cross"
+  patch_type_probs:
+    - 0.4
+    - 0.4
+    - 0.2
+  num_generations: 50
+  max_parallel_jobs: 4
+  max_patch_resamples: 3
+  max_patch_attempts: 3
+  llm_models:
+    - "openrouter/google/gemini-3-pro-preview"
+    - "openrouter/anthropic/claude-opus-4.5-20250929"
+    - "openrouter/openai/gpt-5.1"
+  llm_dynamic_selection: ucb
+  llm_kwargs:
+    temperatures:
+      - 0.7
+      - 0.9
+      - 1.1
+    max_tokens: 16384
+  meta_rec_interval: 5
+  meta_llm_models:
+    - "openrouter/anthropic/claude-opus-4.5-20250929"
+  meta_llm_kwargs:
+    temperatures:
+      - 0.0
+  embedding_model: "text-embedding-3-small"
+  results_dir: ${output_dir}

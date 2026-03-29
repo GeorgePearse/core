@@ -1,0 +1,14 @@
+# Medium island configuration
+db_config:
+  _target_: genesis.database.DatabaseConfig
+  num_islands: 2
+  archive_size: 40
+  exploitation_ratio: 0.2
+  elite_selection_ratio: 0.3
+  num_archive_inspirations: 4
+  num_top_k_inspirations: 2
+  migration_interval: 10
+  migration_rate: 0.0
+  island_elitism: true
+  parent_selection_strategy: "weighted"
+  parent_selection_lambda: 10.0

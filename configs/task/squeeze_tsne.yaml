@@ -1,0 +1,63 @@
+# Task configuration for t-SNE gradient optimization
+# Target: compute_gradient function in squeeze's t-SNE implementation
+
+exp_name: genesis_squeeze_tsne
+
+evaluate_function:
+  _target_: examples.squeeze_tsne.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+# Local execution config
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+
+evo_config:
+  task_sys_msg: |
+    You are an expert Rust developer specializing in high-performance numerical computing.
+    Your task is to optimize the t-SNE gradient computation, which is O(n^2) and called
+    1000+ times per embedding (once per iteration).
+
+    The goal is to maximize trustworthiness (local neighborhood preservation) while minimizing
+    computation time. Combined score = trustworthiness * speed_factor * 100
+
+    The gradient formula is:
+    grad_i = 4 * sum_j[(p_ij - q_ij) * (1 + ||y_i - y_j||^2)^-1 * (y_i - y_j)]
+
+    Key optimization opportunities:
+
+    1. **Loop Optimizations**:
+       - Unroll inner loops for n_components (typically 2)
+       - Use iterators instead of index-based access
+       - Early termination when contribution is negligible
+
+    2. **Memory Access Patterns**:
+       - Cache-friendly sequential access
+       - Pre-compute P - Q matrix once
+       - Avoid repeated bounds checking
+
+    3. **SIMD Vectorization**:
+       - Manual SIMD for distance computation (using std::arch intrinsics)
+       - Process multiple points in parallel
+       - Align data for efficient vector operations
+
+    4. **Algorithmic Improvements**:
+       - Spatial data structures (quad-tree for Barnes-Hut approximation)
+       - Skip negligible contributions (p_ij - q_ij ≈ 0)
+       - Symmetry exploitation (grad_i contribution from j = -grad_j from i)
+
+    5. **Parallelization**:
+       - Compute gradients for multiple points simultaneously
+       - Note: Must be deterministic for reproducibility
+
+    Key constraints:
+    - Must compile with `rustc -O` (no external crates)
+    - Must maintain numerical stability (no NaN/Inf)
+    - Must preserve embedding quality (trustworthiness > 0.3)
+
+    Focus on the functions in EVOLVE-BLOCK - these are called O(n^2 * iterations) times
+    and dominate execution time.
+
+  language: rust
+  init_program_path: examples/squeeze_tsne/initial.rs

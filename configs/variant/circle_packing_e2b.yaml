@@ -1,0 +1,31 @@
+# @package _global_
+# Circle Packing with E2B Cloud Sandboxes
+#
+# This variant runs circle packing optimization using E2B for evaluation.
+# Each evaluation runs in an isolated cloud sandbox.
+
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: circle_packing
+  - override /cluster@_global_: e2b
+  - _self_
+
+job_config:
+  _target_: genesis.launch.E2BJobConfig
+  # Use the standalone evaluator (no genesis package required)
+  eval_program_path: examples/circle_packing/evaluate_standalone.py
+  template: "base"
+  timeout: 120
+  # Only numpy needed - no genesis package required!
+  dependencies:
+    - numpy
+  additional_files: {}
+  env_vars: {}
+
+evo_config:
+  job_type: "e2b"
+  num_generations: 20
+  max_parallel_jobs: 5
+
+variant_suffix: "_e2b"

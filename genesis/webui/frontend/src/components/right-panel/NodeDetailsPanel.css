@@ -1,0 +1,82 @@
+.node-details-panel {
+  padding: 10px;
+}
+
+.node-details-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+
+.node-details-panel h4 {
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+  color: #2c3e50;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.details-section {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.details-section h5 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 6px;
+}
+
+.details-section p {
+  margin: 5px 0;
+  font-size: 13px;
+  word-wrap: break-word;
+}
+
+.details-section p strong {
+  color: #343a40;
+  min-width: 100px;
+  display: inline-block;
+}
+
+.mono {
+  font-family: monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.metrics-section,
+.feedback-section {
+  margin-top: 15px;
+}
+
+.metrics-section h5,
+.feedback-section h5 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+.metrics-section pre,
+.feedback-section pre {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

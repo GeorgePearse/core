@@ -1,0 +1,45 @@
+# Task configuration for Dimensionality Reduction from Scratch in Rust
+# Goal: Maximize Trustworthiness + Spearman Correlation + Speed
+
+exp_name: genesis_squeeze_rust
+
+evaluate_function:
+  _target_: examples.squeeze_rust.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+# Local execution config
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+
+evo_config:
+  task_sys_msg: |
+    You are an expert Rust developer and algorithm designer specializing in dimensionality reduction.
+    Your task is to write a dimensionality reduction program from scratch in Rust.
+    
+    The initial solution is a basic Force-Directed Layout. You should improve it or replace it with
+    better algorithms (e.g., t-SNE, UMAP, MDS, or novel approaches) to maximize the following metrics:
+    
+    1. **Trustworthiness**: How well local neighborhoods are preserved (0.0 to 1.0).
+    2. **Spearman's Correlation**: How well pairwise distances are preserved (0.0 to 1.0).
+    3. **Speed**: Execution time (faster is better).
+    
+    Combined Score = (Trust * 0.4 + Spearman * 0.4 + SpeedScore * 0.2) * 100
+    
+    **Optimization Opportunities**:
+    - **Algorithm Choice**: Switch to t-SNE (Student-t kernel) or UMAP (fuzzy simplicial sets).
+    - **Initialization**: Use PCA or better random initialization.
+    - **Optimization**: Use better gradient descent (momentum, Adam) or Barnes-Hut / FFT for N-body forces.
+    - **Performance**: Use SIMD, efficient memory access, and avoid unnecessary allocations.
+    
+    **Constraints**:
+    - Must be a standalone Rust file compilable with `rustc -O`.
+    - No external crates allowed (standard library only).
+    - Output must be JSON format with `embedding` and `time_seconds`.
+    - Must handle input file format (lines of space-separated floats).
+    
+    Focus on the code within EVOLVE-BLOCK tags.
+
+  language: rust
+  init_program_path: examples/squeeze_rust/initial.rs

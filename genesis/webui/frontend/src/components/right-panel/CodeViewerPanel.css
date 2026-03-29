@@ -1,0 +1,142 @@
+.code-viewer-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0d1117;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-viewer-panel.empty {
+  align-items: center;
+  justify-content: center;
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.code-viewer-panel.empty p {
+  margin: 0;
+  padding: 20px;
+}
+
+.code-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  align-items: center;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.code-controls button {
+  padding: 6px 14px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #21262d;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.code-controls button:hover {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
+.code-controls button.copied {
+  background: #238636;
+  border-color: #238636;
+  color: #ffffff;
+}
+
+.language-badge {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: #388bfd26;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #58a6ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.line-count {
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.code-container {
+  flex: 1;
+  display: flex;
+  overflow: auto;
+  background: #0d1117;
+}
+
+.line-numbers {
+  padding: 16px 12px 16px 16px;
+  text-align: right;
+  color: #484f58;
+  background: #0d1117;
+  border-right: 1px solid #21262d;
+  user-select: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  min-width: 50px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.line-numbers span {
+  display: block;
+}
+
+.code-content {
+  margin: 0;
+  padding: 16px;
+  flex: 1;
+  overflow: auto;
+  background: #0d1117;
+}
+
+.code-content code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  background: transparent !important;
+}
+
+/* Override highlight.js background to match our theme */
+.code-content code.hljs {
+  background: transparent !important;
+  padding: 0;
+}
+
+/* Custom scrollbar for the code container */
+.code-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.code-container::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.code-container::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+}
+
+.code-container::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+.code-container::-webkit-scrollbar-corner {
+  background: #0d1117;
+}

@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: genesis-postgres
+    environment:
+      POSTGRES_DB: genesis
+      POSTGRES_USER: genesis_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-genesis_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - genesis-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genesis_app -d genesis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  liquibase:
+    image: liquibase/liquibase:4.29
+    container_name: genesis-liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/liquibase/changelog
+    networks:
+      - genesis-network
+    command: >
+      --url=jdbc:postgresql://postgres:5432/genesis
+      --username=genesis_app
+      --password=${POSTGRES_PASSWORD:-genesis_dev}
+      --changeLogFile=changelog/changelogs/db.changelog-master.yaml
+      update
+
+  backend:
+    build:
+      context: genesis_rust_backend
+      dockerfile: Dockerfile
+    container_name: genesis-backend
+    environment:
+      DATABASE_URL: postgresql://genesis_app:${POSTGRES_PASSWORD:-genesis_dev}@postgres:5432/genesis
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RUST_LOG: info
+      PORT: "8080"
+    ports:
+      - "${GENESIS_PORT:-8080}:8080"
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    networks:
+      - genesis-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: genesis/webui/frontend
+      dockerfile: Dockerfile
+    container_name: genesis-frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-3000}:8080"
+    depends_on:
+      - backend
+    networks:
+      - genesis-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  genesis-network:
+    driver: bridge

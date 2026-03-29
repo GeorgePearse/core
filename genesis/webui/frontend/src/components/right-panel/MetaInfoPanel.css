@@ -1,0 +1,80 @@
+.meta-info-panel {
+  padding: 10px;
+}
+
+.meta-info-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+
+.meta-info-panel h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+}
+
+.stats-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 200px;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h4 {
+  margin: 0 0 12px 0;
+  color: #2c3e50;
+  font-size: 15px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.stat-card p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+.stat-card p strong {
+  color: #343a40;
+}
+
+.metric-good {
+  color: #2ecc71;
+  font-weight: bold;
+}
+
+.charts-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.chart-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+.chart-container h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+.chart-wrapper {
+  height: 200px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+}

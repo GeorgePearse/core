@@ -1,0 +1,86 @@
+.evaluation-panel {
+  padding: 10px;
+}
+
+.evaluation-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+
+.evaluation-panel h4 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+}
+
+.eval-section {
+  margin-bottom: 20px;
+}
+
+.eval-section h5 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 6px;
+}
+
+.score-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.score-display .score {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.score-display .score.correct {
+  color: #2ecc71;
+}
+
+.score-display .score.incorrect {
+  color: #e74c3c;
+}
+
+.score-display .correctness {
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.metrics-table td {
+  padding: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.metrics-table .metric-key {
+  background: #f8f9fa;
+  font-weight: 500;
+  width: 40%;
+}
+
+.metrics-table .metric-value {
+  font-family: monospace;
+}
+
+.feedback-content {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}

@@ -1,0 +1,39 @@
+# E2B-accelerated HNSW optimization
+# Runs evaluations in parallel E2B cloud sandboxes for ~10x speedup
+#
+# IMPORTANT: This task requires Rust (rustc) in the E2B sandbox.
+# The default "base" template may not have Rust installed.
+# Options:
+# 1. Create a custom E2B template with Rust: https://e2b.dev/docs/sandbox-template
+# 2. Use a community template with Rust pre-installed
+# 3. Install Rust in sandbox via dependencies (slow but works)
+
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: squeeze_hnsw
+  - override /cluster@_global_: e2b
+  - _self_
+
+job_config:
+  _target_: genesis.launch.E2BJobConfig
+  eval_program_path: genesis/eval_hydra.py
+
+  # Use base template - may need custom template with Rust for this task
+  template: "base"
+
+  # Longer timeout for Rust compilation + evaluation
+  timeout: 600
+
+  # Dependencies for the evaluator
+  dependencies:
+    - numpy
+    - opencv-python-headless
+
+evo_config:
+  job_type: "e2b"
+  num_generations: 100
+  # Run 10 evaluations in parallel - adjust based on E2B plan limits
+  max_parallel_jobs: 10
+
+variant_suffix: "_e2b"

@@ -1,0 +1,57 @@
+.visualization-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.panels-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  height: 100%;
+  overflow: hidden;
+  min-width: 200px;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.divider {
+  width: 8px;
+  background-color: #ddd;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.divider:hover {
+  background-color: #3498db;
+}
+
+.divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 30px;
+  background-color: #888;
+  border-radius: 1px;
+}
+
+.right-panel {
+  height: 100%;
+  overflow: hidden;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}

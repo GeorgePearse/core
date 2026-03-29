@@ -1,0 +1,11 @@
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: mask_to_seg_rust
+  - override /cluster@_global_: local
+  - _self_
+
+evo_config:
+  num_generations: 100
+
+variant_suffix: "_example"

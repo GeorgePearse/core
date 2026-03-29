@@ -1,0 +1,179 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'genesis_rust_backend/**'
+      - 'genesis/webui/frontend/**'
+      - 'migrations/**'
+      - 'terraform/**'
+      - '.github/workflows/deploy.yml'
+
+env:
+  PROJECT_ID: openloop-491716
+  REGION: europe-west2
+  REGISTRY: europe-west2-docker.pkg.dev/openloop-491716/genesis
+  SERVICE_NAME: genesis-backend
+
+jobs:
+  build-and-push-backend:
+    name: Build & push backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push
+        working-directory: genesis_rust_backend
+        run: |
+          IMAGE="${{ env.REGISTRY }}/backend:${{ github.sha }}"
+          docker build -t "${IMAGE}" -t "${{ env.REGISTRY }}/backend:latest" .
+          docker push "${IMAGE}"
+          docker push "${{ env.REGISTRY }}/backend:latest"
+
+  build-and-push-frontend:
+    name: Build & push frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push
+        working-directory: genesis/webui/frontend
+        run: |
+          IMAGE="${{ env.REGISTRY }}/frontend:${{ github.sha }}"
+          docker build -t "${IMAGE}" -t "${{ env.REGISTRY }}/frontend:latest" .
+          docker push "${IMAGE}"
+          docker push "${{ env.REGISTRY }}/frontend:latest"
+
+  migrate:
+    name: Run database migrations
+    runs-on: ubuntu-latest
+    needs: build-and-push-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install Cloud SQL Proxy
+        run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.1/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+
+      - name: Install Liquibase
+        run: |
+          wget -q https://github.com/liquibase/liquibase/releases/download/v4.29.2/liquibase-4.29.2.tar.gz
+          mkdir -p /opt/liquibase
+          tar xzf liquibase-4.29.2.tar.gz -C /opt/liquibase
+          echo "/opt/liquibase" >> $GITHUB_PATH
+
+      - name: Start Cloud SQL Proxy
+        run: |
+          ./cloud-sql-proxy "${{ secrets.CLOUD_SQL_CONNECTION_NAME }}" \
+            --port 5432 &
+          sleep 5
+
+      - name: Run migrations
+        working-directory: migrations
+        run: |
+          liquibase \
+            --url="jdbc:postgresql://localhost:5432/${{ secrets.DB_NAME }}" \
+            --username="${{ secrets.DB_USER }}" \
+            --password="${{ secrets.DB_PASSWORD }}" \
+            --changeLogFile=changelogs/db.changelog-master.yaml \
+            update
+
+  deploy-backend:
+    name: Deploy backend to Cloud Run
+    runs-on: ubuntu-latest
+    needs: [build-and-push-backend, migrate]
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy backend
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --image="${{ env.REGISTRY }}/backend:${{ github.sha }}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --service-account=genesis-cloud-run@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets="DATABASE_URL=genesis-database-url:latest,OPENAI_API_KEY=genesis-openai-api-key:latest,ANTHROPIC_API_KEY=genesis-anthropic-api-key:latest" \
+            --set-env-vars="RUST_LOG=info" \
+            --vpc-connector=genesis-connector \
+            --vpc-egress=private-ranges-only \
+            --port=8080 \
+            --cpu=1 \
+            --memory=512Mi \
+            --min-instances=0 \
+            --max-instances=3
+
+  deploy-frontend:
+    name: Deploy frontend to Cloud Run
+    runs-on: ubuntu-latest
+    needs: [build-and-push-frontend, deploy-backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get backend URL
+        id: backend
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy frontend
+        run: |
+          gcloud run deploy genesis-frontend \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --image="${{ env.REGISTRY }}/frontend:${{ github.sha }}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --set-env-vars="BACKEND_URL=${{ steps.backend.outputs.url }}" \
+            --port=8080 \
+            --cpu=1 \
+            --memory=256Mi \
+            --min-instances=0 \
+            --max-instances=2
