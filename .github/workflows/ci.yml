@@ -106,9 +106,12 @@ jobs:
     name: Terraform plan
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        module: [infrastructure/genesis, infrastructure/plane]
     defaults:
       run:
-        working-directory: terraform
+        working-directory: ${{ matrix.module }}
     steps:
       - uses: actions/checkout@v4
 
