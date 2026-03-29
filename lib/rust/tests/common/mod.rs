@@ -28,7 +28,7 @@ impl TestDb {
             .expect("failed to connect to test postgres");
 
         let ddl = std::fs::read_to_string(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../migrations/full_ddl.sql"),
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../migrations/full_ddl.sql"),
         )
         .expect("failed to read full_ddl.sql");
 
