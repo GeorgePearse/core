@@ -3,9 +3,9 @@
 
 FROM rust:1.83-bookworm AS builder
 WORKDIR /app
-COPY genesis_rust_backend/Cargo.toml genesis_rust_backend/Cargo.lock ./
+COPY lib/rust/Cargo.toml lib/rust/Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src
-COPY genesis_rust_backend/src ./src
+COPY lib/rust/src ./src
 RUN touch src/main.rs && cargo build --release
 
 FROM gcr.io/distroless/cc-debian12

@@ -185,7 +185,7 @@ infrastructure/**/.terraform.lock.hcl
 infrastructure/**/terraform.tfvars
 
 # Rust
-genesis_rust_backend/target/
+lib/rust/target/
 
 # SQLx offline cache (committed intentionally, but gitignore target)
 # genesis_rust_backend/.sqlx/

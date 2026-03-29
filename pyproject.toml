@@ -55,9 +55,10 @@ dependencies = [
 genesis = "genesis.cli:main"
 
 [tool.setuptools]
-script-files = ["genesis/genesis_launch", "genesis/genesis_mcp"]
+script-files = ["lib/python/genesis/genesis_launch", "lib/python/genesis/genesis_mcp"]
 
 [tool.setuptools.packages.find]
+where = ["lib/python"]
 include = ["genesis", "genesis.*"]
 
 [tool.setuptools.package-data]
@@ -81,5 +82,5 @@ ignore = ["E203", "E501"]
 
 [tool.zuban]
 target-version = "py3.12"
-include = ["genesis", "examples"]
+include = ["lib/python/genesis", "examples"]
 exclude = ["results", "tests"]
