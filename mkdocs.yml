@@ -32,10 +32,11 @@ plugins:
       default_handler: python
       handlers:
         python:
-          paths: [.]
+          paths: [lib/python]
           options:
             show_root_heading: true
             show_source: true
+            allow_inspection: false
 
 markdown_extensions:
   - admonition
