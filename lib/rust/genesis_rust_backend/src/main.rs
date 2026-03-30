@@ -150,6 +150,7 @@ async fn list_individuals(
         r#"SELECT i.run_id, i.individual_id, i.generation, i.timestamp,
                   i.parent_id, i.mutation_type, i.fitness_score,
                   i.combined_score, i.metrics, i.is_pareto,
+                  i.correct,
                   i.api_cost, i.embed_cost, i.novelty_cost,
                   i.code_hash, i.code_size, i.code, i.language, i.text_feedback
            FROM individuals i
@@ -186,7 +187,7 @@ async fn list_individuals(
                     "embed_cost": r.embed_cost,
                     "novelty_cost": r.novelty_cost,
                 },
-                "correct": r.is_pareto,
+                "correct": r.correct,
                 "is_pareto": r.is_pareto,
                 "code_hash": r.code_hash,
                 "code_size": r.code_size,
@@ -335,6 +336,7 @@ struct IndividualApiRow {
     combined_score: f64,
     metrics: serde_json::Value,
     is_pareto: bool,
+    correct: bool,
     api_cost: f64,
     embed_cost: f64,
     novelty_cost: f64,

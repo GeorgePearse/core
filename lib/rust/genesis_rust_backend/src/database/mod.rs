@@ -123,6 +123,7 @@ impl PgProgramDatabase {
         combined_score: f64,
         metrics: &JsonValue,
         is_pareto: bool,
+        correct: bool,
         api_cost: f64,
         embed_cost: f64,
         novelty_cost: f64,
@@ -135,10 +136,10 @@ impl PgProgramDatabase {
         sqlx::query(
             r#"INSERT INTO individuals
                (run_id, individual_id, generation, parent_id, mutation_type,
-                fitness_score, combined_score, metrics, is_pareto,
+                fitness_score, combined_score, metrics, is_pareto, correct,
                 api_cost, embed_cost, novelty_cost, code_hash, code_size,
                 code, language, text_feedback)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)"#,
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)"#,
         )
         .bind(run_id)
         .bind(individual_id)
@@ -149,6 +150,7 @@ impl PgProgramDatabase {
         .bind(combined_score)
         .bind(metrics)
         .bind(is_pareto)
+        .bind(correct)
         .bind(api_cost)
         .bind(embed_cost)
         .bind(novelty_cost)
