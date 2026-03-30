@@ -106,7 +106,8 @@ CREATE TABLE public.individuals (
     code_size integer DEFAULT 0 NOT NULL,
     code text DEFAULT ''::text NOT NULL,
     language text DEFAULT 'python'::text NOT NULL,
-    text_feedback text DEFAULT ''::text NOT NULL
+    text_feedback text DEFAULT ''::text NOT NULL,
+    correct boolean DEFAULT false NOT NULL
 );
 
 
