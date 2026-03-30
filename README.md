@@ -381,6 +381,9 @@ Genesis is built upon the excellent work of the [Shinka AI](https://github.com/s
 
 ## Citation ✍️
 
+<img width="1086" height="252" alt="image" src="https://github.com/user-attachments/assets/fa3946dc-7407-4d0c-982d-2c083fbfe864" />
+
+
 If you use `Genesis` in your research, please cite:
 
 ```
