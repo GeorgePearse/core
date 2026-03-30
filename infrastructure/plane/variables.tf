@@ -19,7 +19,7 @@ variable "zone" {
 variable "machine_type" {
   description = "GCE machine type (2 vCPU / 8 GB recommended minimum)"
   type        = string
-  default     = "e2-standard-2"
+  default     = "e2-standard-4"
 }
 
 variable "disk_size_gb" {
