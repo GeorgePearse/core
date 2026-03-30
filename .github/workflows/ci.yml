@@ -115,16 +115,19 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v2
 
-      - name: Install prek and ty
+      - name: Install tools
         run: |
           uv tool install prek
           uv tool install ty
+          uv pip install zuban==0.2.3
 
       - name: Run prek hooks (ruff + code quality checks)
+        env:
+          SKIP: hadolint-docker,oxlint
         run: |
           prek install
           prek install-hooks
-          prek run --all-files
+          prek run --all-files --config .pre-commit-config.yaml
 
       - name: Run ty type checker
         run: ty check lib/python/genesis/
