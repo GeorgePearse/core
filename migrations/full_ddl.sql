@@ -99,7 +99,6 @@ CREATE TABLE public.individuals (
     combined_score double precision DEFAULT 0 NOT NULL,
     metrics jsonb DEFAULT '{}'::jsonb NOT NULL,
     is_pareto boolean DEFAULT false NOT NULL,
-    correct boolean DEFAULT false NOT NULL,
     api_cost double precision DEFAULT 0 NOT NULL,
     embed_cost double precision DEFAULT 0 NOT NULL,
     novelty_cost double precision DEFAULT 0 NOT NULL,
@@ -107,7 +106,8 @@ CREATE TABLE public.individuals (
     code_size integer DEFAULT 0 NOT NULL,
     code text DEFAULT ''::text NOT NULL,
     language text DEFAULT 'python'::text NOT NULL,
-    text_feedback text DEFAULT ''::text NOT NULL
+    text_feedback text DEFAULT ''::text NOT NULL,
+    correct boolean DEFAULT false NOT NULL
 );
 
 
