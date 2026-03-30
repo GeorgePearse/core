@@ -13,18 +13,15 @@ export default function DatabaseSelector() {
   const { tasksAndResults, currentDbPath, isLoading, autoRefreshEnabled } =
     state;
 
-  // Extract current task and result from path
+  // Extract current task and result from state
   const { currentTask, currentResult } = useMemo(() => {
     if (!currentDbPath) return { currentTask: '', currentResult: '' };
-    const parts = currentDbPath.split('/');
-    if (parts.length >= 3) {
-      return {
-        currentTask: parts[parts.length - 3],
-        currentResult: currentDbPath,
-      };
-    }
-    return { currentTask: '', currentResult: '' };
-  }, [currentDbPath]);
+    const db = state.databases.find(d => d.path === currentDbPath);
+    return {
+      currentTask: db?.task_name || '',
+      currentResult: currentDbPath,
+    };
+  }, [currentDbPath, state.databases]);
 
   // Load databases on mount
   useEffect(() => {

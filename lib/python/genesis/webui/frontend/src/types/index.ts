@@ -49,6 +49,7 @@ export interface LLMResult {
 export interface DatabaseInfo {
   path: string;
   name: string;
+  task_name?: string;
   actual_path?: string;
   sort_key?: string;
   stats?: {
