@@ -34,6 +34,7 @@ The framework supports **parallel evaluation of candidates** locally or in cloud
 | ☁️ **[E2B Integration](docs/e2b_integration.md)** | Running evaluations in cloud sandboxes | Setup, configuration, dependencies |
 | ⚙️ **[Configuration](docs/configuration.md)** | Comprehensive configuration reference | All config options, optimization settings, advanced features |
 | 🎨 **[WebUI](docs/webui.md)** | Interactive visualization and monitoring | Real-time tracking, result analysis, debugging tools |
+| 🌐 **[Live Demo](https://genesis-frontend-a7eq2wihnq-nw.a.run.app/)** | Hosted Genesis frontend | Try Genesis in the browser |
 | 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |
 
 ## Installation & Quick Start 🚀

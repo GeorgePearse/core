@@ -59,7 +59,7 @@ script-files = ["lib/python/genesis/genesis_launch", "lib/python/genesis/genesis
 
 [tool.setuptools.packages.find]
 where = ["lib/python"]
-include = ["genesis", "genesis.*"]
+include = ["genesis", "genesis.*", "squeeze", "squeeze.*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
