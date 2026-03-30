@@ -194,3 +194,6 @@ projects/squeeze/target/
 
 # SQLx offline cache (committed intentionally, but gitignore target)
 # genesis_rust_backend/.sqlx/
+
+# Grog
+.grog/

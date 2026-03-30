@@ -1,0 +1,57 @@
+targets:
+  - name: lint_python
+    command: ruff check --fix lib/python/ examples/ tests/
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+
+  - name: lint_format
+    command: ruff format --check lib/python/ examples/ tests/
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+
+  - name: typecheck
+    command: zuban check
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - pyproject.toml
+
+  - name: lint_docker
+    command: hadolint Dockerfile lib/rust/Dockerfile
+    inputs:
+      - Dockerfile
+      - lib/rust/Dockerfile
+
+  - name: python_install
+    command: uv pip install -e ".[dev]" --quiet
+    inputs:
+      - pyproject.toml
+      - "lib/python/genesis/**/*.py"
+
+  - name: python_test
+    command: pytest tests/ -x -q
+    inputs:
+      - "tests/**/*.py"
+      - "lib/python/genesis/**/*.py"
+      - pyproject.toml
+    dependencies:
+      - :python_install
+      - :lint_python
+      - :lint_format
+
+  - name: docs_build
+    command: mkdocs build --strict
+    inputs:
+      - "docs/**/*.md"
+      - mkdocs.yml
+      - "lib/python/genesis/**/*.py"
+    outputs:
+      - "dir::site"
+    dependencies:
+      - :python_install
