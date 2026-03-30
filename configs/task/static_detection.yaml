@@ -1,0 +1,58 @@
+evaluate_function:
+  _target_: examples.static_detection.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+  time: "00:05:00"
+
+evo_config:
+  task_sys_msg: |
+    You are an expert in computer vision and image processing, specialising
+    in frame-difference algorithms for static camera detection.
+
+    PROBLEM: Given two consecutive video frames (H x W x 3, uint8 BGR numpy
+    arrays), compute a single scalar "difference" value.  The system uses
+    this value with a threshold to decide if a camera is static or has moved.
+
+    GOAL: Maximise the separation between the difference distributions of
+    truly-static pairs and truly-moving pairs so a single threshold cleanly
+    separates them.  This is measured by AUC (Mann-Whitney) and the
+    separation ratio (moving_p05 / static_p95).
+
+    CHALLENGES the algorithm must handle:
+      - Sensor noise (sigma 3-8)
+      - Global lighting changes (+/- 20 brightness)
+      - JPEG compression artefacts (quality 40-80)
+      - Combinations of the above
+    While still detecting:
+      - Full scene changes
+      - Camera bumps / shifts
+      - Partial occlusions (objects entering the frame)
+
+    CONSTRAINTS:
+      - Must run in < 5ms per pair on CPU at 640x480
+      - Only numpy is available (no OpenCV, no torch)
+      - The function signature is fixed: compute_difference(frame_a, frame_b) -> float
+
+    APPROACHES TO EXPLORE:
+      1. Adaptive normalisation (per-frame mean/std) before diffing
+      2. Downscaling before comparison for speed
+      3. Gradient/edge-based comparison (Sobel via numpy convolution)
+      4. Robust statistics (median, trimmed mean) instead of sum
+      5. Multi-scale: compare at multiple resolutions and combine
+      6. Block-based comparison with outlier rejection
+      7. Colour-space conversion (e.g. to grayscale or YCrCb) before diffing
+      8. Histogram-based comparison
+      9. Binary signatures / hashing approaches
+     10. Morphological pre-filtering to suppress noise
+
+    The baseline (simple absolute difference sum) achieves ~0.85 AUC.
+    A good solution should reach >0.95 AUC with separation >5x.
+  language: "python"
+  init_program_path: "examples/static_detection/initial.py"
+  job_type: "local"
+
+exp_name: "genesis_static_detection"
