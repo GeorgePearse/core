@@ -1,6 +1,6 @@
 targets:
   - name: lint_python
-    command: ruff check --fix lib/python/ examples/ tests/
+    command: .venv/bin/ruff check --fix lib/python/ examples/ tests/
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -10,7 +10,7 @@ targets:
       - :python_install
 
   - name: lint_format
-    command: ruff format --check lib/python/ examples/ tests/
+    command: .venv/bin/ruff format --check lib/python/ examples/ tests/
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -20,7 +20,7 @@ targets:
       - :python_install
 
   - name: typecheck
-    command: zuban check
+    command: .venv/bin/zuban check
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -35,13 +35,13 @@ targets:
       - lib/python/genesis/webui/frontend/Dockerfile
 
   - name: python_install
-    command: uv pip install -e ".[dev]" --quiet
+    command: .venv/bin/python -m pip install -e ".[dev]" --quiet
     inputs:
       - pyproject.toml
       - "lib/python/genesis/**/*.py"
 
   - name: python_test
-    command: pytest tests/ -x -q
+    command: .venv/bin/pytest tests/ -x -q
     inputs:
       - "tests/**/*.py"
       - "lib/python/genesis/**/*.py"
@@ -52,7 +52,7 @@ targets:
       - :lint_format
 
   - name: docs_build
-    command: mkdocs build --strict
+    command: .venv/bin/mkdocs build --strict
     inputs:
       - "docs/**/*.md"
       - mkdocs.yml
