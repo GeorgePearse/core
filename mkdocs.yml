@@ -79,6 +79,7 @@ nav:
       - Evolutionary Approach: evolutionary_approach.md
       - Modular Architecture: modular_architecture.md
       - SAGA Integration: saga_integration.md
+      - Schedule Plan: schedule-plan.md
   - Development:
       - Developer Guide: developer_guide.md
       - Dev Environment: devenv.md
