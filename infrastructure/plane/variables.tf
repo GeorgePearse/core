@@ -29,9 +29,9 @@ variable "disk_size_gb" {
 }
 
 variable "plane_version" {
-  description = "Plane release channel passed to the installer (stable or a specific tag)"
+  description = "Vendored Plane CE git tag (must match the subtree in vendor/plane/)"
   type        = string
-  default     = "stable"
+  default     = "v1.2.3"
 }
 
 variable "allowed_ssh_cidrs" {

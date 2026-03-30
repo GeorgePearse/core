@@ -2,6 +2,10 @@
 set -euo pipefail
 
 MARKER="/opt/plane/.installed"
+PLANE_DIR="/opt/plane"
+DEPLOY_BUCKET="__DEPLOY_BUCKET__"
+DEPLOY_OBJECT="plane-deploy.tar.gz"
+
 if [[ -f "$MARKER" ]]; then
   echo "Plane already installed, skipping startup script."
   exit 0
@@ -9,7 +13,7 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Install Docker
+# ── Install Docker ───────────────────────────────────────────────────
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg
 install -m 0755 -d /etc/apt/keyrings
@@ -27,13 +31,41 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 systemctl enable docker
 systemctl start docker
 
-# Create Plane data directory
-mkdir -p /opt/plane
-cd /opt/plane
+# ── Download vendored Plane source from GCS ──────────────────────────
+mkdir -p "$PLANE_DIR"
+cd "$PLANE_DIR"
 
-# Run the Plane Community Edition installer in silent mode
-# This downloads prime-cli, which pulls docker-compose.yml and starts services
-curl -fsSL https://prime.plane.so/install/ | bash -s -- --silent
+echo "Downloading deploy artifact from gs://${DEPLOY_BUCKET}/${DEPLOY_OBJECT} ..."
+curl -fsSL -o "${DEPLOY_OBJECT}" \
+  "https://storage.googleapis.com/${DEPLOY_BUCKET}/${DEPLOY_OBJECT}"
+
+tar xzf "${DEPLOY_OBJECT}"
+rm -f "${DEPLOY_OBJECT}"
+
+# ── Prepare environment files ────────────────────────────────────────
+# The tarball contains:
+#   plane/          – vendored Plane CE source (from vendor/plane/)
+#   overrides/      – docker-compose.prod.yml and .env.template
+#
+# If no .env exists yet, seed from the template.
+if [[ ! -f plane/.env ]]; then
+  cp overrides/.env.template plane/.env
+  echo "WARNING: Using default .env – update secrets before production use."
+fi
+
+# The API also needs its own .env; seed from the example if missing.
+if [[ ! -f plane/apps/api/.env ]]; then
+  cp plane/apps/api/.env.example plane/apps/api/.env
+  echo "WARNING: Using default apps/api/.env – update secrets before production use."
+fi
+
+# ── Build and start services ─────────────────────────────────────────
+cd plane
+
+docker compose \
+  -f docker-compose.yml \
+  -f /opt/plane/overrides/docker-compose.prod.yml \
+  up -d --build
 
 touch "$MARKER"
-echo "Plane Community Edition installation complete."
+echo "Plane Community Edition (vendored) installation complete."

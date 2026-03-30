@@ -44,7 +44,11 @@ resource "google_compute_instance" "plane" {
   }
 
   metadata = {
-    startup-script = file("${path.module}/startup.sh")
+    startup-script = replace(
+      file("${path.module}/startup.sh"),
+      "__DEPLOY_BUCKET__",
+      google_storage_bucket.plane_deploy.name,
+    )
   }
 
   service_account {

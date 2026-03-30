@@ -1,0 +1,103 @@
+# Production overrides for Plane CE on GCE.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This file is layered on top of vendor/plane/docker-compose.yml and adjusts
+# settings for the e2-standard-4 VM (4 vCPU / 16 GB).
+
+services:
+  api:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 4G
+
+  worker:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 2G
+
+  beat-worker:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  web:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+
+  admin:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  space:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  live:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  plane-db:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 2G
+
+  plane-redis:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  plane-mq:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  plane-minio:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+
+  proxy:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
