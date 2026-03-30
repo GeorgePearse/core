@@ -102,3 +102,7 @@ ty check lib/python/genesis/
 **Port 5432 already in use**: Another PostgreSQL instance (e.g. from Docker) may be running. Stop it first, or change the port in `devenv.nix`.
 
 **direnv not activating**: Run `direnv allow` in the repo root after cloning. Ensure the direnv hook is in your shell rc file.
+
+## Future: Monorepo Build System
+
+As the repo grows (Python, Rust, Terraform, Node, migrations), a dedicated monorepo build system may be worthwhile. [Bazel](https://github.com/bazelbuild/bazel) is a strong candidate -- it handles multi-language builds with hermetic caching and remote execution, which would replace the current ad-hoc `cargo build` / `maturin develop` / `uv pip install` workflow with a single `bazel build //...` invocation. Worth evaluating once build times or cross-package dependency coordination become a bottleneck.
