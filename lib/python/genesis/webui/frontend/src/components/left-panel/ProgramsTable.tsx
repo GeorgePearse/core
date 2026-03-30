@@ -7,7 +7,7 @@ export default function ProgramsTable() {
   const { state, selectProgram, setRightTab } = useGenesis();
   const { programs, selectedProgram } = state;
 
-  const [showIncorrect, setShowIncorrect] = useState(false);
+  const [showIncorrect, setShowIncorrect] = useState(true);
   const [sortState, setSortState] = useState<SortState>({
     key: 'generation',
     direction: 'asc',
