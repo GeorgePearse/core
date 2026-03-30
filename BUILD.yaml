@@ -10,7 +10,7 @@ targets:
       - :python_install
 
   - name: lint_format
-    command: bash -c "source .venv/bin/activate && ruff format --check lib/python/ examples/ tests/"
+    command: bash -c "echo CWD=$(pwd) && ls -la .venv/bin/ruff 2>&1 && source .venv/bin/activate && which ruff && ruff format --check lib/python/ examples/ tests/"
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
