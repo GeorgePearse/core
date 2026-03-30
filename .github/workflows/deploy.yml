@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'genesis_rust_backend/**'
-      - 'genesis/webui/frontend/**'
+      - 'lib/rust/genesis_rust_backend/**'
+      - 'lib/python/genesis/webui/frontend/**'
       - 'migrations/**'
       - 'terraform/**'
       - '.github/workflows/deploy.yml'
@@ -34,10 +34,10 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build and push
-        working-directory: genesis_rust_backend
+        working-directory: lib/rust
         run: |
           IMAGE="${{ env.REGISTRY }}/backend:${{ github.sha }}"
-          docker build -t "${IMAGE}" -t "${{ env.REGISTRY }}/backend:latest" .
+          docker build -f genesis_rust_backend/Dockerfile -t "${IMAGE}" -t "${{ env.REGISTRY }}/backend:latest" .
           docker push "${IMAGE}"
           docker push "${{ env.REGISTRY }}/backend:latest"
 
@@ -58,7 +58,7 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build and push
-        working-directory: genesis/webui/frontend
+        working-directory: lib/python/genesis/webui/frontend
         run: |
           IMAGE="${{ env.REGISTRY }}/frontend:${{ github.sha }}"
           docker build -t "${IMAGE}" -t "${{ env.REGISTRY }}/frontend:latest" .
