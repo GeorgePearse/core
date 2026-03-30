@@ -12,7 +12,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 
 use crate::mds::{classical_mds, compute_distance_matrix};
-use crate::metrics_simd;
 
 /// Isomap dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -98,7 +97,7 @@ impl Isomap {
     fn compute_geodesic_distances(
         &self,
         knn_graph: &[Vec<(usize, f64)>],
-        distances: &Array2<f64>,
+        _distances: &Array2<f64>,
         n_samples: usize,
     ) -> PyResult<Array2<f64>> {
         // Use parallel Dijkstra for O(n^2 log n) instead of Floyd-Warshall's O(n^3)
@@ -116,7 +115,7 @@ impl Isomap {
         }
 
         // Check for disconnected components
-        let max_dist = geodesic
+        let _max_dist = geodesic
             .iter()
             .filter(|&&d| !d.is_infinite())
             .cloned()

@@ -7,7 +7,7 @@
 //! This implementation supports Barnes-Hut approximation for O(n log n) gradient
 //! computation on large datasets.
 
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array2, Axis};
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -42,6 +42,7 @@ pub struct TSNE {
 impl TSNE {
     #[new]
     #[pyo3(signature = (n_components=2, perplexity=30.0, learning_rate=200.0, n_iter=1000, early_exaggeration=12.0, random_state=None, theta=0.5, use_barnes_hut=None, min_grad_norm=1e-7, n_iter_without_progress=300))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_components: usize,
         perplexity: f64,
@@ -76,7 +77,7 @@ impl TSNE {
     ) -> PyResult<Bound<'py, PyArray2<f64>>> {
         let x = data.as_array();
         let n_samples = x.nrows();
-        let n_features = x.ncols();
+        let _n_features = x.ncols();
 
         if n_samples < 4 {
             return Err(PyValueError::new_err("t-SNE requires at least 4 samples"));
@@ -306,10 +307,8 @@ impl TSNE {
         // Recurse into children
         if let Some(ref children) = node.children {
             let mut contrib = 0.0;
-            for child in children.iter() {
-                if let Some(ref child_node) = child {
-                    contrib += self.compute_z_contribution(child_node, point, point_idx);
-                }
+            for child_node in children.iter().flatten() {
+                contrib += self.compute_z_contribution(child_node, point, point_idx);
             }
             return contrib;
         }
@@ -380,16 +379,16 @@ impl TSNE {
 
                     // Normalize
                     if sum_p > 1e-10 {
-                        for j in 0..n_samples {
-                            p_row[j] /= sum_p;
+                        for val in p_row.iter_mut().take(n_samples) {
+                            *val /= sum_p;
                         }
                     }
 
                     // Compute entropy
                     let mut entropy = 0.0;
-                    for j in 0..n_samples {
-                        if p_row[j] > 1e-10 {
-                            entropy -= p_row[j] * p_row[j].ln();
+                    for val in p_row.iter().take(n_samples) {
+                        if *val > 1e-10 {
+                            entropy -= *val * val.ln();
                         }
                     }
 

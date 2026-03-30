@@ -71,7 +71,7 @@ pub fn euclidean(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { euclidean_avx2(a, b) });
         }
-        return Ok(euclidean_scalar(a, b));
+        Ok(euclidean_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
@@ -173,7 +173,7 @@ pub fn manhattan(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { manhattan_avx2(a, b) });
         }
-        return Ok(manhattan_scalar(a, b));
+        Ok(manhattan_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]
@@ -270,7 +270,7 @@ pub fn cosine(a: &[f32], b: &[f32]) -> MetricResult<f32> {
         if has_avx2() {
             return Ok(unsafe { cosine_avx2(a, b) });
         }
-        return Ok(cosine_scalar(a, b));
+        Ok(cosine_scalar(a, b))
     }
 
     #[cfg(target_arch = "aarch64")]

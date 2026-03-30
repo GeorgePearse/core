@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::hnsw_algo::Hnsw;
 use crate::sparse_metrics;
 
+type NeighborGraphCache = Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>;
+type QueryResult = PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)>;
+
 #[derive(Serialize, Deserialize)]
 struct SparseHnswIndexState {
     indptr: Vec<i32>,
@@ -47,7 +50,7 @@ pub struct SparseHnswIndex {
     is_angular: bool,
 
     /// Cached neighbor graph (for neighbor_graph property)
-    neighbor_graph_cache: Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>,
+    neighbor_graph_cache: NeighborGraphCache,
 
     /// HNSW Graph
     hnsw: Hnsw,
@@ -58,6 +61,7 @@ impl SparseHnswIndex {
     /// Create a new sparse nearest neighbor index
     #[new]
     #[pyo3(signature = (data, indices, indptr, n_samples, n_features, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None, prune_strategy="simple", prune_alpha=1.2))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         data: PyReadonlyArray1<f32>,
         indices: PyReadonlyArray1<i32>,
@@ -174,7 +178,7 @@ impl SparseHnswIndex {
         query_indptr: PyReadonlyArray1<i32>,
         k: usize,
         ef: usize,
-    ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
+    ) -> QueryResult {
         if k == 0 {
             return Err(PyValueError::new_err("k must be at least 1"));
         }
@@ -253,10 +257,7 @@ impl SparseHnswIndex {
     }
 
     /// Get the k-nearest neighbor graph
-    fn neighbor_graph<'py>(
-        &mut self,
-        py: Python<'py>,
-    ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
+    fn neighbor_graph<'py>(&mut self, py: Python<'py>) -> QueryResult {
         if let Some((indices, distances)) = &self.neighbor_graph_cache {
             #[allow(deprecated)]
             let indices_py = PyArray2::from_vec2(py, indices)?.to_owned();

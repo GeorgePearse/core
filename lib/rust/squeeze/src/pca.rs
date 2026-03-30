@@ -8,7 +8,6 @@ use ndarray_linalg::{Eigh, UPLO};
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use rayon::prelude::*;
 
 /// PCA dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -35,7 +34,7 @@ impl PCA {
     }
 
     /// Fit PCA to the data
-    pub fn fit(&mut self, py: Python<'_>, data: PyReadonlyArray2<f64>) -> PyResult<()> {
+    pub fn fit(&mut self, _py: Python<'_>, data: PyReadonlyArray2<f64>) -> PyResult<()> {
         let x = data.as_array();
         let (n_samples, n_features) = (x.nrows(), x.ncols());
 

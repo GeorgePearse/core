@@ -11,6 +11,9 @@ use crate::hnsw_algo::Hnsw;
 use crate::metrics::{self, MetricError, MetricResult};
 use crate::metrics_simd;
 
+type NeighborGraphCache = Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>;
+type QueryResult = PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)>;
+
 impl From<MetricError> for PyErr {
     fn from(err: MetricError) -> Self {
         PyValueError::new_err(err.to_string())
@@ -41,7 +44,7 @@ pub struct HnswIndex {
     /// Whether the metric is angular (cosine/correlation)
     is_angular: bool,
     /// Cached neighbor graph (for neighbor_graph property)
-    neighbor_graph_cache: Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>,
+    neighbor_graph_cache: NeighborGraphCache,
 
     /// The HNSW Graph Algorithm
     hnsw: Hnsw,
@@ -52,6 +55,7 @@ impl HnswIndex {
     /// Create a new nearest neighbor index
     #[new]
     #[pyo3(signature = (data, n_neighbors, metric, m, ef_construction, dist_p=2.0, random_state=None, prune_strategy="simple", prune_alpha=1.2))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         data: PyReadonlyArray2<f32>,
         n_neighbors: usize,
@@ -151,7 +155,7 @@ impl HnswIndex {
         k: usize,
         ef: usize,
         filter: Option<&Bound<'py, PyAny>>,
-    ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
+    ) -> QueryResult {
         if k == 0 {
             return Err(PyValueError::new_err("k must be at least 1"));
         }
@@ -266,10 +270,7 @@ impl HnswIndex {
     }
 
     /// Get the k-nearest neighbor graph for all indexed points
-    fn neighbor_graph<'py>(
-        &mut self,
-        py: Python<'py>,
-    ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
+    fn neighbor_graph<'py>(&mut self, py: Python<'py>) -> QueryResult {
         if let Some((indices, distances)) = &self.neighbor_graph_cache {
             #[allow(deprecated)]
             let indices_py = PyArray2::from_vec2(py, indices)?.to_owned();

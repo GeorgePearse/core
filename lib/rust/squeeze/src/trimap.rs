@@ -15,7 +15,6 @@ use rayon::prelude::*;
 use std::collections::BinaryHeap;
 
 use crate::mds::compute_distance_matrix;
-use crate::metrics_simd;
 
 /// TriMap dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -34,6 +33,7 @@ pub struct TriMap {
 impl TriMap {
     #[new]
     #[pyo3(signature = (n_components=2, n_inliers=12, n_outliers=4, n_random=3, n_iter=800, learning_rate=0.1, weight_adj=50.0, random_state=None))]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_components: usize,
         n_inliers: usize,
@@ -144,7 +144,7 @@ impl TriMap {
             for _ in 0..self.n_random {
                 if let Some(&pos) = inliers.choose(&mut rng) {
                     let neg = loop {
-                        let candidate = rng.gen_range(0..n_samples);
+                        let candidate = rng.random_range(0..n_samples);
                         if candidate != i && candidate != pos {
                             break candidate;
                         }

@@ -5,16 +5,19 @@
 
 use ndarray::{Array2, Axis};
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
-use ordered_float::OrderedFloat;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rand::prelude::*;
 use rand::SeedableRng;
 use rand_distr::Normal;
-use std::collections::BinaryHeap;
 
 use crate::mds::compute_distance_matrix;
-use crate::metrics_simd;
+
+type PairSets = (
+    Vec<(usize, usize, f64)>,
+    Vec<(usize, usize, f64)>,
+    Vec<(usize, usize)>,
+);
 
 /// PaCMAP dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
@@ -98,15 +101,7 @@ impl PaCMAP {
 }
 
 impl PaCMAP {
-    fn generate_pairs(
-        &self,
-        distances: &Array2<f64>,
-        n_samples: usize,
-    ) -> (
-        Vec<(usize, usize, f64)>,
-        Vec<(usize, usize, f64)>,
-        Vec<(usize, usize)>,
-    ) {
+    fn generate_pairs(&self, distances: &Array2<f64>, n_samples: usize) -> PairSets {
         let mut rng: StdRng = match self.random_state {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => StdRng::from_seed(rand::random()),
@@ -142,7 +137,7 @@ impl PaCMAP {
             // Far pairs: randomly sampled
             for _ in 0..n_fp {
                 let j = loop {
-                    let candidate = rng.gen_range(0..n_samples);
+                    let candidate = rng.random_range(0..n_samples);
                     if candidate != i {
                         break candidate;
                     }
@@ -192,9 +187,9 @@ impl PaCMAP {
             let (w_near, w_mn, w_fp) = self.get_weights(iter);
 
             // Near pair gradients: attract
-            for &(i, j, d_orig) in near_pairs {
+            for &(i, j, _d_orig) in near_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
-                let d_emb_safe = d_emb.max(1e-10);
+                let _d_emb_safe = d_emb.max(1e-10);
 
                 // Attractive force: minimize (d_emb^2) / (10 + d_emb^2)
                 let coeff = w_near * 2.0 * 10.0 / ((10.0 + d_emb * d_emb).powi(2));
@@ -207,7 +202,7 @@ impl PaCMAP {
             }
 
             // Mid-near pair gradients: attract then repel
-            for &(i, j, d_orig) in mid_near_pairs {
+            for &(i, j, _d_orig) in mid_near_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
 
                 // Attractive force similar to near pairs
@@ -223,7 +218,7 @@ impl PaCMAP {
             // Far pair gradients: repel
             for &(i, j) in far_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
-                let d_emb_safe = d_emb.max(1e-10);
+                let _d_emb_safe = d_emb.max(1e-10);
 
                 // Repulsive force: maximize 1 / (1 + d_emb^2)
                 // Gradient pushes points apart

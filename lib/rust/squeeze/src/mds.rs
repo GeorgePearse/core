@@ -8,8 +8,6 @@ use ndarray_linalg::{Eigh, UPLO};
 use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use rand::prelude::*;
-use rand_distr::Normal;
 use rayon::prelude::*;
 
 use crate::metrics_simd;
@@ -20,7 +18,7 @@ pub struct MDS {
     n_components: usize,
     metric: bool,
     n_iter: usize,
-    random_state: Option<u64>,
+    _random_state: Option<u64>,
     stress: Option<f64>,
 }
 
@@ -38,7 +36,7 @@ impl MDS {
             n_components,
             metric,
             n_iter,
-            random_state,
+            _random_state: random_state,
             stress: None,
         }
     }
@@ -245,9 +243,7 @@ impl MDS {
         }
 
         // New embedding = (1/n) * B * current_embedding
-        let new_embedding = b.dot(embedding) / n_samples as f64;
-
-        new_embedding
+        b.dot(embedding) / n_samples as f64
     }
 
     fn compute_stress(&self, target_distances: &Array2<f64>, embedding: &Array2<f64>) -> f64 {
