@@ -6,6 +6,8 @@ targets:
       - "examples/**/*.py"
       - "tests/**/*.py"
       - pyproject.toml
+    dependencies:
+      - :python_install
 
   - name: lint_format
     command: ruff format --check lib/python/ examples/ tests/
@@ -14,6 +16,8 @@ targets:
       - "examples/**/*.py"
       - "tests/**/*.py"
       - pyproject.toml
+    dependencies:
+      - :python_install
 
   - name: typecheck
     command: zuban check
@@ -21,6 +25,8 @@ targets:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
       - pyproject.toml
+    dependencies:
+      - :python_install
 
   - name: lint_docker
     command: hadolint Dockerfile lib/python/genesis/webui/frontend/Dockerfile
