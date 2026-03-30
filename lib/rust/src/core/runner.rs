@@ -114,13 +114,18 @@ impl EvolutionRunner {
     }
 
     async fn run_generation_0(&mut self) -> Result<()> {
-        let (sys, user) = self.prompt_sampler.initial_program_prompt();
-        let resp = self.llm.query_dyn(&user, &sys).await?;
-        let eval = self.scheduler.run(&resp.content, 0)?;
+        let code = if let Some(path) = &self.cfg.init_program_path {
+            std::fs::read_to_string(path)?
+        } else {
+            let (sys, user) = self.prompt_sampler.initial_program_prompt();
+            let resp = self.llm.query_dyn(&user, &sys).await?;
+            resp.content
+        };
+        let eval = self.scheduler.run(&code, 0)?;
 
         let program = Program {
             id: Uuid::new_v4(),
-            code: resp.content,
+            code,
             language: self.cfg.language.clone(),
             parent_id: None,
             generation: 0,
