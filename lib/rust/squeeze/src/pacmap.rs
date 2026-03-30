@@ -4,25 +4,25 @@
 //! both local and global structure during optimization.
 
 use ndarray::{Array2, Axis};
-use pyo3::prelude::*;
+use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
+use ordered_float::OrderedFloat;
 use pyo3::exceptions::PyValueError;
-use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
+use pyo3::prelude::*;
 use rand::prelude::*;
 use rand::SeedableRng;
 use rand_distr::Normal;
 use std::collections::BinaryHeap;
-use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::mds::compute_distance_matrix;
+use crate::metrics_simd;
 
 /// PaCMAP dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
 pub struct PaCMAP {
     n_components: usize,
-    n_neighbors: usize,     // Near pairs
-    mn_ratio: f64,          // Mid-near ratio (multiplier for n_neighbors)
-    fp_ratio: f64,          // Far pair ratio
+    n_neighbors: usize, // Near pairs
+    mn_ratio: f64,      // Mid-near ratio (multiplier for n_neighbors)
+    fp_ratio: f64,      // Far pair ratio
     n_iter: usize,
     learning_rate: f64,
     random_state: Option<u64>,
@@ -53,9 +53,11 @@ impl PaCMAP {
     }
 
     /// Fit and transform data using PaCMAP
-    pub fn fit_transform<'py>(&self, py: Python<'py>, data: PyReadonlyArray2<f64>) 
-        -> PyResult<Bound<'py, PyArray2<f64>>> 
-    {
+    pub fn fit_transform<'py>(
+        &self,
+        py: Python<'py>,
+        data: PyReadonlyArray2<f64>,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
         let x = data.as_array();
         let n_samples = x.nrows();
 
@@ -67,7 +69,8 @@ impl PaCMAP {
         }
 
         // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
+        let x_f32: Vec<Vec<f32>> = x
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -82,16 +85,28 @@ impl PaCMAP {
         let mut embedding = self.initialize_embedding(n_samples)?;
 
         // Three-phase optimization
-        self.optimize(&mut embedding, &near_pairs, &mid_near_pairs, &far_pairs, n_samples);
+        self.optimize(
+            &mut embedding,
+            &near_pairs,
+            &mid_near_pairs,
+            &far_pairs,
+            n_samples,
+        );
 
         Ok(embedding.into_pyarray_bound(py))
     }
 }
 
 impl PaCMAP {
-    fn generate_pairs(&self, distances: &Array2<f64>, n_samples: usize) 
-        -> (Vec<(usize, usize, f64)>, Vec<(usize, usize, f64)>, Vec<(usize, usize)>) 
-    {
+    fn generate_pairs(
+        &self,
+        distances: &Array2<f64>,
+        n_samples: usize,
+    ) -> (
+        Vec<(usize, usize, f64)>,
+        Vec<(usize, usize, f64)>,
+        Vec<(usize, usize)>,
+    ) {
         let mut rng: StdRng = match self.random_state {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => StdRng::from_seed(rand::random()),
@@ -144,10 +159,10 @@ impl PaCMAP {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => StdRng::from_seed(rand::random()),
         };
-        
+
         let normal = Normal::new(0.0, 1e-4).unwrap();
         let mut embedding = Array2::zeros((n_samples, self.n_components));
-        
+
         for mut row in embedding.rows_mut() {
             for v in row.iter_mut() {
                 *v = normal.sample(&mut rng) * 100.0; // PaCMAP uses larger initial scale
@@ -163,7 +178,7 @@ impl PaCMAP {
         near_pairs: &[(usize, usize, f64)],
         mid_near_pairs: &[(usize, usize, f64)],
         far_pairs: &[(usize, usize)],
-        n_samples: usize
+        n_samples: usize,
     ) {
         // PaCMAP uses three phases with different weight schedules
         // Phase 1 (0-100): Focus on mid-near and far
@@ -180,10 +195,10 @@ impl PaCMAP {
             for &(i, j, d_orig) in near_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
                 let d_emb_safe = d_emb.max(1e-10);
-                
+
                 // Attractive force: minimize (d_emb^2) / (10 + d_emb^2)
                 let coeff = w_near * 2.0 * 10.0 / ((10.0 + d_emb * d_emb).powi(2));
-                
+
                 for c in 0..self.n_components {
                     let diff = embedding[[i, c]] - embedding[[j, c]];
                     grad[[i, c]] += coeff * diff;
@@ -194,10 +209,10 @@ impl PaCMAP {
             // Mid-near pair gradients: attract then repel
             for &(i, j, d_orig) in mid_near_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
-                
+
                 // Attractive force similar to near pairs
                 let coeff = w_mn * 2.0 * 10000.0 / ((10000.0 + d_emb * d_emb).powi(2));
-                
+
                 for c in 0..self.n_components {
                     let diff = embedding[[i, c]] - embedding[[j, c]];
                     grad[[i, c]] += coeff * diff;
@@ -209,11 +224,11 @@ impl PaCMAP {
             for &(i, j) in far_pairs {
                 let d_emb = self.embedding_distance(embedding, i, j);
                 let d_emb_safe = d_emb.max(1e-10);
-                
+
                 // Repulsive force: maximize 1 / (1 + d_emb^2)
                 // Gradient pushes points apart
                 let coeff = w_fp * 2.0 / ((1.0 + d_emb * d_emb).powi(2));
-                
+
                 for c in 0..self.n_components {
                     let diff = embedding[[i, c]] - embedding[[j, c]];
                     grad[[i, c]] -= coeff * diff;
@@ -304,7 +319,12 @@ mod tests {
 
         // Far pairs: n_samples * (n_neighbors * fp_ratio)
         let expected_far = 30 * (5.0 * 2.0) as usize;
-        assert_eq!(far.len(), expected_far, "Expected {} far pairs", expected_far);
+        assert_eq!(
+            far.len(),
+            expected_far,
+            "Expected {} far pairs",
+            expected_far
+        );
     }
 
     #[test]
@@ -316,10 +336,7 @@ mod tests {
 
         // For each point, verify near pairs are among the k-nearest
         for i in 0..30 {
-            let pairs_for_i: Vec<_> = near_pairs
-                .iter()
-                .filter(|&&(a, _, _)| a == i)
-                .collect();
+            let pairs_for_i: Vec<_> = near_pairs.iter().filter(|&&(a, _, _)| a == i).collect();
 
             for &&(_, j, d) in &pairs_for_i {
                 // Distance should match the distance matrix
@@ -327,7 +344,12 @@ mod tests {
             }
 
             // Should have exactly n_neighbors pairs per point
-            assert_eq!(pairs_for_i.len(), 3, "Each point should have {} near pairs", 3);
+            assert_eq!(
+                pairs_for_i.len(),
+                3,
+                "Each point should have {} near pairs",
+                3
+            );
         }
     }
 
@@ -390,7 +412,10 @@ mod tests {
         assert_relative_eq!(w_fp_end, 1.0, epsilon = 1e-5);
 
         // Mid-near weight decreases towards 0
-        assert!(w_mn_start > w_mn_end, "Mid-near weight should decrease in phase 2");
+        assert!(
+            w_mn_start > w_mn_end,
+            "Mid-near weight should decrease in phase 2"
+        );
     }
 
     #[test]
@@ -414,11 +439,7 @@ mod tests {
     fn test_embedding_distance_zero() {
         let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
 
-        let embedding = Array2::from_shape_vec((3, 2), vec![
-            0.0, 0.0,
-            3.0, 4.0,
-            1.0, 1.0,
-        ]).unwrap();
+        let embedding = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 3.0, 4.0, 1.0, 1.0]).unwrap();
 
         // Distance to self should be 0
         let dist_self = pacmap.embedding_distance(&embedding, 0, 0);
@@ -429,11 +450,7 @@ mod tests {
     fn test_embedding_distance_known_value() {
         let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
 
-        let embedding = Array2::from_shape_vec((3, 2), vec![
-            0.0, 0.0,
-            3.0, 4.0,
-            1.0, 1.0,
-        ]).unwrap();
+        let embedding = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 3.0, 4.0, 1.0, 1.0]).unwrap();
 
         // Distance from (0,0) to (3,4) should be 5
         let dist = pacmap.embedding_distance(&embedding, 0, 1);
@@ -444,11 +461,7 @@ mod tests {
     fn test_embedding_distance_symmetric() {
         let pacmap = PaCMAP::new(2, 5, 0.5, 2.0, 450, 1.0, Some(42));
 
-        let embedding = Array2::from_shape_vec((3, 2), vec![
-            0.0, 0.0,
-            3.0, 4.0,
-            1.0, 1.0,
-        ]).unwrap();
+        let embedding = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 3.0, 4.0, 1.0, 1.0]).unwrap();
 
         // Distance should be symmetric
         assert_relative_eq!(
@@ -500,7 +513,10 @@ mod tests {
                 }
             }
         }
-        assert!(different, "Different seeds should produce different initializations");
+        assert!(
+            different,
+            "Different seeds should produce different initializations"
+        );
     }
 
     #[test]

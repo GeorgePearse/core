@@ -1,14 +1,14 @@
+use numpy::{PyArray2, PyReadonlyArray1};
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyBytes};
-use numpy::{PyArray2, PyReadonlyArray1};
 use pyo3::PyErr;
 use rayon::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // Note: sparse_metrics doesn't have SIMD version yet (sparse data is harder to vectorize)
-use crate::sparse_metrics;
 use crate::hnsw_algo::Hnsw;
+use crate::sparse_metrics;
 
 #[derive(Serialize, Deserialize)]
 struct SparseHnswIndexState {
@@ -31,12 +31,12 @@ pub struct SparseHnswIndex {
     indptr: Vec<i32>,
     indices: Vec<i32>,
     data: Vec<f32>,
-    
+
     /// Number of samples
     n_samples: usize,
     /// Number of features (columns)
     n_features: usize,
-    
+
     /// Number of neighbors to return
     n_neighbors: usize,
     /// Distance metric name
@@ -45,10 +45,10 @@ pub struct SparseHnswIndex {
     _dist_p: f32,
     /// Whether the metric is angular (cosine/correlation)
     is_angular: bool,
-    
+
     /// Cached neighbor graph (for neighbor_graph property)
     neighbor_graph_cache: Option<(Vec<Vec<i64>>, Vec<Vec<f32>>)>,
-    
+
     /// HNSW Graph
     hnsw: Hnsw,
 }
@@ -81,9 +81,10 @@ impl SparseHnswIndex {
             return Err(PyValueError::new_err("n_neighbors must be at least 1"));
         }
         if n_neighbors > n_samples {
-            return Err(PyValueError::new_err(
-                format!("n_neighbors ({}) cannot exceed n_samples ({})", n_neighbors, n_samples),
-            ));
+            return Err(PyValueError::new_err(format!(
+                "n_neighbors ({}) cannot exceed n_samples ({})",
+                n_neighbors, n_samples
+            )));
         }
 
         if !Self::is_supported_metric(metric.as_str()) {
@@ -95,44 +96,54 @@ impl SparseHnswIndex {
         }
 
         // Clone data into Vecs
-        let data_vec = data.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?.to_vec();
-        let indices_vec = indices.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?.to_vec();
-        let indptr_vec = indptr.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?.to_vec();
+        let data_vec = data
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?
+            .to_vec();
+        let indices_vec = indices
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?
+            .to_vec();
+        let indptr_vec = indptr
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?
+            .to_vec();
 
         // Validate indptr length
         if indptr_vec.len() != n_samples + 1 {
-            return Err(PyValueError::new_err(
-                format!("indptr length ({}) must be n_samples + 1 ({})", indptr_vec.len(), n_samples + 1)
-            ));
+            return Err(PyValueError::new_err(format!(
+                "indptr length ({}) must be n_samples + 1 ({})",
+                indptr_vec.len(),
+                n_samples + 1
+            )));
         }
 
         let is_angular = metric == "cosine" || metric == "correlation";
-        
+
         // Parse pruning strategy
         use crate::hnsw_algo::PruneStrategy;
         let prune_strat = match prune_strategy {
             "simple" => PruneStrategy::Simple,
             "robust" => PruneStrategy::RobustPrune { alpha: prune_alpha },
-            _ => return Err(PyValueError::new_err(format!(
-                "Unknown prune_strategy '{}'. Supported: 'simple', 'robust'",
-                prune_strategy
-            ))),
+            _ => {
+                return Err(PyValueError::new_err(format!(
+                    "Unknown prune_strategy '{}'. Supported: 'simple', 'robust'",
+                    prune_strategy
+                )))
+            }
         };
-        
+
         // Initialize HNSW with deterministic seed for reproducibility
         let seed = random_state.unwrap_or(42);
         let mut hnsw = Hnsw::with_prune_strategy(m, ef_construction, n_samples, seed, prune_strat);
-        
+
         // Build graph
         {
             let dist_func = |i: usize, j: usize| -> f32 {
-                Self::compute_dist_static(
-                    i, j, 
-                    &indptr_vec, &indices_vec, &data_vec, 
-                    &metric
-                ).unwrap_or(f32::MAX)
+                Self::compute_dist_static(i, j, &indptr_vec, &indices_vec, &data_vec, &metric)
+                    .unwrap_or(f32::MAX)
             };
-            
+
             for i in 0..n_samples {
                 hnsw.insert(i, &dist_func);
             }
@@ -168,54 +179,67 @@ impl SparseHnswIndex {
             return Err(PyValueError::new_err("k must be at least 1"));
         }
 
-        let q_data = query_data.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?;
-        let q_indices = query_indices.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?;
-        let q_indptr = query_indptr.as_slice().map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let q_data = query_data
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let q_indices = query_indices
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let q_indptr = query_indptr
+            .as_slice()
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
         let n_queries = q_indptr.len() - 1;
 
         // Parallel query execution
-        let results: Result<Vec<_>, PyErr> = (0..n_queries).into_par_iter().map(|i| {
-            
-            // Define closure to compute distance between query i and node j
-            let dist_query = |node_idx: usize| -> f32 {
-                // Extract query vector i
-                let q_start = q_indptr[i] as usize;
-                let q_end = q_indptr[i+1] as usize;
-                let q_vec_data = &q_data[q_start..q_end];
-                let q_vec_indices = &q_indices[q_start..q_end];
-                
-                // Extract node vector j (from self)
-                let c_start = self.indptr[node_idx] as usize;
-                let c_end = self.indptr[node_idx+1] as usize;
-                let c_vec_data = &self.data[c_start..c_end];
-                let c_vec_indices = &self.indices[c_start..c_end];
-                
-                Self::compute_dist_vectors(
-                    q_vec_indices, q_vec_data,
-                    c_vec_indices, c_vec_data,
-                    &self.metric
-                ).unwrap_or(f32::MAX)
-            };
+        let results: Result<Vec<_>, PyErr> = (0..n_queries)
+            .into_par_iter()
+            .map(|i| {
+                // Define closure to compute distance between query i and node j
+                let dist_query = |node_idx: usize| -> f32 {
+                    // Extract query vector i
+                    let q_start = q_indptr[i] as usize;
+                    let q_end = q_indptr[i + 1] as usize;
+                    let q_vec_data = &q_data[q_start..q_end];
+                    let q_vec_indices = &q_indices[q_start..q_end];
 
-            let found = self.hnsw.search(None, k, ef, dist_query);
-            
-            let mut indices = Vec::with_capacity(k);
-            let mut distances = Vec::with_capacity(k);
-            
-            for (idx, dist) in found {
-                indices.push(idx as i64);
-                distances.push(dist);
-                if indices.len() >= k { break; }
-            }
-            
-            while indices.len() < k {
-                indices.push(-1);
-                distances.push(f32::NAN);
-            }
+                    // Extract node vector j (from self)
+                    let c_start = self.indptr[node_idx] as usize;
+                    let c_end = self.indptr[node_idx + 1] as usize;
+                    let c_vec_data = &self.data[c_start..c_end];
+                    let c_vec_indices = &self.indices[c_start..c_end];
 
-            Ok((indices, distances))
-        }).collect();
+                    Self::compute_dist_vectors(
+                        q_vec_indices,
+                        q_vec_data,
+                        c_vec_indices,
+                        c_vec_data,
+                        &self.metric,
+                    )
+                    .unwrap_or(f32::MAX)
+                };
+
+                let found = self.hnsw.search(None, k, ef, dist_query);
+
+                let mut indices = Vec::with_capacity(k);
+                let mut distances = Vec::with_capacity(k);
+
+                for (idx, dist) in found {
+                    indices.push(idx as i64);
+                    distances.push(dist);
+                    if indices.len() >= k {
+                        break;
+                    }
+                }
+
+                while indices.len() < k {
+                    indices.push(-1);
+                    distances.push(f32::NAN);
+                }
+
+                Ok((indices, distances))
+            })
+            .collect();
 
         let results = results?;
         let (all_indices, all_distances): (Vec<_>, Vec<_>) = results.into_iter().unzip();
@@ -229,9 +253,10 @@ impl SparseHnswIndex {
     }
 
     /// Get the k-nearest neighbor graph
-    fn neighbor_graph<'py>(&mut self, py: Python<'py>)
-        -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
-        
+    fn neighbor_graph<'py>(
+        &mut self,
+        py: Python<'py>,
+    ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<f32>>)> {
         if let Some((indices, distances)) = &self.neighbor_graph_cache {
             #[allow(deprecated)]
             let indices_py = PyArray2::from_vec2(py, indices)?.to_owned();
@@ -239,46 +264,55 @@ impl SparseHnswIndex {
             let distances_py = PyArray2::from_vec2(py, distances)?.to_owned();
             return Ok((indices_py, distances_py));
         }
-        
+
         let ef = self.n_neighbors * 2;
 
-        let results: Result<Vec<_>, PyErr> = (0..self.n_samples).into_par_iter().map(|i| {
-            let dist_query = |node_idx: usize| -> f32 {
-                Self::compute_dist_static(
-                    i, node_idx, 
-                    &self.indptr, &self.indices, &self.data, 
-                    &self.metric
-                ).unwrap_or(f32::MAX)
-            };
-            
-            let mut found = self.hnsw.search(Some(i), self.n_neighbors + 1, ef, dist_query);
-            
-            // Filter self
-            found.retain(|&(idx, _)| idx != i);
-            found.truncate(self.n_neighbors);
-            
-            let mut indices = Vec::with_capacity(self.n_neighbors);
-            let mut distances = Vec::with_capacity(self.n_neighbors);
-            
-            for (idx, dist) in found {
-                indices.push(idx as i64);
-                distances.push(dist);
-            }
-            
-            while indices.len() < self.n_neighbors {
-                indices.push(-1);
-                distances.push(f32::NAN);
-            }
+        let results: Result<Vec<_>, PyErr> = (0..self.n_samples)
+            .into_par_iter()
+            .map(|i| {
+                let dist_query = |node_idx: usize| -> f32 {
+                    Self::compute_dist_static(
+                        i,
+                        node_idx,
+                        &self.indptr,
+                        &self.indices,
+                        &self.data,
+                        &self.metric,
+                    )
+                    .unwrap_or(f32::MAX)
+                };
 
-            Ok((indices, distances))
-        }).collect();
+                let mut found = self
+                    .hnsw
+                    .search(Some(i), self.n_neighbors + 1, ef, dist_query);
+
+                // Filter self
+                found.retain(|&(idx, _)| idx != i);
+                found.truncate(self.n_neighbors);
+
+                let mut indices = Vec::with_capacity(self.n_neighbors);
+                let mut distances = Vec::with_capacity(self.n_neighbors);
+
+                for (idx, dist) in found {
+                    indices.push(idx as i64);
+                    distances.push(dist);
+                }
+
+                while indices.len() < self.n_neighbors {
+                    indices.push(-1);
+                    distances.push(f32::NAN);
+                }
+
+                Ok((indices, distances))
+            })
+            .collect();
 
         let results = results?;
         let (all_indices, all_distances): (Vec<_>, Vec<_>) = results.into_iter().unzip();
 
         // Cache the results
         self.neighbor_graph_cache = Some((all_indices, all_distances));
-        
+
         // Borrow from cache for return to avoid cloning
         let (cached_indices, cached_distances) = self.neighbor_graph_cache.as_ref().unwrap();
         #[allow(deprecated)]
@@ -288,13 +322,17 @@ impl SparseHnswIndex {
 
         Ok((indices_array, distances_array))
     }
-    
-    fn prepare(&mut self) -> PyResult<()> { Ok(()) }
-    
-    fn update(&mut self, _new_data: &Bound<'_, PyAny>) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err("Update not implemented for sparse index yet"))
+
+    fn prepare(&mut self) -> PyResult<()> {
+        Ok(())
     }
-    
+
+    fn update(&mut self, _new_data: &Bound<'_, PyAny>) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(
+            "Update not implemented for sparse index yet",
+        ))
+    }
+
     // Serialization support (Pickle)
     pub fn __getstate__(&self, py: Python) -> PyResult<Py<PyBytes>> {
         let state = SparseHnswIndexState {
@@ -309,15 +347,17 @@ impl SparseHnswIndex {
             is_angular: self.is_angular,
             hnsw: self.hnsw.clone(),
         };
-        
-        let encoded = bincode::serialize(&state).map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+        let encoded =
+            bincode::serialize(&state).map_err(|e| PyValueError::new_err(e.to_string()))?;
         Ok(PyBytes::new_bound(py, &encoded).into())
     }
 
     pub fn __setstate__(&mut self, state: &Bound<'_, PyBytes>) -> PyResult<()> {
         let bytes = state.as_bytes();
-        let decoded: SparseHnswIndexState = bincode::deserialize(bytes).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        
+        let decoded: SparseHnswIndexState =
+            bincode::deserialize(bytes).map_err(|e| PyValueError::new_err(e.to_string()))?;
+
         self.indptr = decoded.indptr;
         self.indices = decoded.indices;
         self.data = decoded.data;
@@ -329,54 +369,74 @@ impl SparseHnswIndex {
         self.is_angular = decoded.is_angular;
         self.hnsw = decoded.hnsw;
         self.neighbor_graph_cache = None;
-        
+
         Ok(())
     }
-    
+
     #[getter]
-    fn _angular_trees(&self) -> bool { self.is_angular }
-    
+    fn _angular_trees(&self) -> bool {
+        self.is_angular
+    }
+
     #[getter]
-    fn metric(&self) -> String { self.metric.clone() }
-    
+    fn metric(&self) -> String {
+        self.metric.clone()
+    }
+
     #[getter]
-    fn n_samples(&self) -> usize { self.n_samples }
-    
+    fn n_samples(&self) -> usize {
+        self.n_samples
+    }
+
     #[getter]
-    fn n_features(&self) -> usize { self.n_features }
+    fn n_features(&self) -> usize {
+        self.n_features
+    }
 }
 
 impl SparseHnswIndex {
     // Static helper to compute distance between two rows in the stored data
     fn compute_dist_static(
-        i: usize, j: usize,
-        indptr: &[i32], indices: &[i32], data: &[f32],
-        metric: &str
+        i: usize,
+        j: usize,
+        indptr: &[i32],
+        indices: &[i32],
+        data: &[f32],
+        metric: &str,
     ) -> Result<f32, PyErr> {
         let start_i = indptr[i] as usize;
-        let end_i = indptr[i+1] as usize;
+        let end_i = indptr[i + 1] as usize;
         let idx_i = &indices[start_i..end_i];
         let val_i = &data[start_i..end_i];
-        
+
         let start_j = indptr[j] as usize;
-        let end_j = indptr[j+1] as usize;
+        let end_j = indptr[j + 1] as usize;
         let idx_j = &indices[start_j..end_j];
         let val_j = &data[start_j..end_j];
-        
+
         Self::compute_dist_vectors(idx_i, val_i, idx_j, val_j, metric)
     }
 
     // Static helper for vectors
     fn compute_dist_vectors(
-        idx_a: &[i32], val_a: &[f32],
-        idx_b: &[i32], val_b: &[f32],
-        metric: &str
+        idx_a: &[i32],
+        val_a: &[f32],
+        idx_b: &[i32],
+        val_b: &[f32],
+        metric: &str,
     ) -> Result<f32, PyErr> {
         match metric {
             "euclidean" | "l2" => Ok(sparse_metrics::sparse_euclidean(idx_a, val_a, idx_b, val_b)),
-            "manhattan" | "l1" | "taxicab" => Ok(sparse_metrics::sparse_manhattan(idx_a, val_a, idx_b, val_b)),
-            "cosine" | "correlation" => Ok(sparse_metrics::sparse_cosine(idx_a, val_a, idx_b, val_b)),
-            _ => Err(PyValueError::new_err(format!("unknown sparse metric '{}'", metric))),
+            "manhattan" | "l1" | "taxicab" => {
+                Ok(sparse_metrics::sparse_manhattan(idx_a, val_a, idx_b, val_b))
+            }
+            "cosine" | "correlation" => {
+                Ok(sparse_metrics::sparse_cosine(idx_a, val_a, idx_b, val_b))
+            }
+            _ => Err(PyValueError::new_err(format!(
+                "unknown sparse metric '{}'",
+                metric
+            ))),
         }
     }
 

@@ -16,7 +16,12 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn new(min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> Self {
-        Self { min_x, max_x, min_y, max_y }
+        Self {
+            min_x,
+            max_x,
+            min_y,
+            max_y,
+        }
     }
 
     pub fn width(&self) -> f64 {
@@ -35,10 +40,14 @@ impl BoundingBox {
     pub fn get_quadrant(&self, x: f64, y: f64) -> usize {
         let cx = (self.min_x + self.max_x) / 2.0;
         let cy = (self.min_y + self.max_y) / 2.0;
-        
+
         let mut quad = 0;
-        if x > cx { quad += 1; }
-        if y > cy { quad += 2; }
+        if x > cx {
+            quad += 1;
+        }
+        if y > cy {
+            quad += 2;
+        }
         quad
     }
 
@@ -46,7 +55,7 @@ impl BoundingBox {
     pub fn get_quadrant_bounds(&self, quadrant: usize) -> BoundingBox {
         let cx = (self.min_x + self.max_x) / 2.0;
         let cy = (self.min_y + self.max_y) / 2.0;
-        
+
         match quadrant {
             0 => BoundingBox::new(self.min_x, cx, self.min_y, cy),
             1 => BoundingBox::new(cx, self.max_x, self.min_y, cy),
@@ -136,7 +145,7 @@ impl QuadTreeNode {
         // If this is a leaf with one point, need to split
         if self.children.is_none() {
             self.subdivide();
-            
+
             // Reinsert the existing point
             if let Some(old_idx) = self.point_idx.take() {
                 // Use the center of mass from before this insertion as the old point location
@@ -153,7 +162,10 @@ impl QuadTreeNode {
                             point_idx: Some(old_idx),
                         });
                     } else {
-                        children[old_quad].as_mut().unwrap().insert(old_idx, old_x, old_y);
+                        children[old_quad]
+                            .as_mut()
+                            .unwrap()
+                            .insert(old_idx, old_x, old_y);
                     }
                 }
             }
@@ -183,12 +195,7 @@ impl QuadTreeNode {
     }
 
     /// Compute repulsive forces using Barnes-Hut approximation
-    pub fn compute_non_edge_forces(
-        &self,
-        point: &[f64],
-        theta: f64,
-        point_idx: usize,
-    ) -> [f64; 2] {
+    pub fn compute_non_edge_forces(&self, point: &[f64], theta: f64, point_idx: usize) -> [f64; 2] {
         // Skip if this is the same point
         if let Some(idx) = self.point_idx {
             if idx == point_idx {
@@ -241,14 +248,14 @@ mod tests {
     #[test]
     fn test_bounding_box() {
         let bbox = BoundingBox::new(0.0, 10.0, 0.0, 10.0);
-        
+
         assert_eq!(bbox.width(), 10.0);
         assert_eq!(bbox.height(), 10.0);
-        
+
         assert!(bbox.contains(5.0, 5.0));
         assert!(!bbox.contains(-1.0, 5.0));
         assert!(!bbox.contains(11.0, 5.0));
-        
+
         // Test quadrant determination
         assert_eq!(bbox.get_quadrant(2.0, 2.0), 0);
         assert_eq!(bbox.get_quadrant(7.0, 2.0), 1);
@@ -258,15 +265,11 @@ mod tests {
 
     #[test]
     fn test_quadtree_build() {
-        let points = Array2::from_shape_vec((4, 2), vec![
-            0.0, 0.0,
-            1.0, 0.0,
-            0.0, 1.0,
-            1.0, 1.0,
-        ]).unwrap();
-        
+        let points =
+            Array2::from_shape_vec((4, 2), vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]).unwrap();
+
         let tree = QuadTreeNode::build(&points);
-        
+
         assert_eq!(tree.total_mass, 4.0);
         assert_relative_eq!(tree.center_of_mass[0], 0.5, epsilon = 1e-10);
         assert_relative_eq!(tree.center_of_mass[1], 0.5, epsilon = 1e-10);
@@ -274,17 +277,13 @@ mod tests {
 
     #[test]
     fn test_barnes_hut_forces() {
-        let points = Array2::from_shape_vec((3, 2), vec![
-            0.0, 0.0,
-            10.0, 0.0,
-            5.0, 5.0,
-        ]).unwrap();
-        
+        let points = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 10.0, 0.0, 5.0, 5.0]).unwrap();
+
         let tree = QuadTreeNode::build(&points);
-        
+
         // Test force computation with high theta (more approximation)
         let force = tree.compute_non_edge_forces(&[0.0, 0.0], 0.5, 0);
-        
+
         // Forces should be non-zero (repulsive from other points)
         assert!(force[0] != 0.0 || force[1] != 0.0);
     }

@@ -4,26 +4,26 @@
 //! For each anchor point, it tries to keep similar points closer than dissimilar ones.
 
 use ndarray::{Array2, Axis};
-use pyo3::prelude::*;
+use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
+use ordered_float::OrderedFloat;
 use pyo3::exceptions::PyValueError;
-use numpy::{PyArray2, PyReadonlyArray2, IntoPyArray};
+use pyo3::prelude::*;
 use rand::prelude::*;
 use rand::SeedableRng;
 use rand_distr::Normal;
 use rayon::prelude::*;
 use std::collections::BinaryHeap;
-use ordered_float::OrderedFloat;
 
-use crate::metrics_simd;
 use crate::mds::compute_distance_matrix;
+use crate::metrics_simd;
 
 /// TriMap dimensionality reduction
 #[pyclass(module = "squeeze._hnsw_backend")]
 pub struct TriMap {
     n_components: usize,
-    n_inliers: usize,     // Number of nearest neighbors (similar points)
-    n_outliers: usize,    // Number of far points (dissimilar points)
-    n_random: usize,      // Number of random triplets
+    n_inliers: usize,  // Number of nearest neighbors (similar points)
+    n_outliers: usize, // Number of far points (dissimilar points)
+    n_random: usize,   // Number of random triplets
     n_iter: usize,
     learning_rate: f64,
     weight_adj: f64,
@@ -57,20 +57,23 @@ impl TriMap {
     }
 
     /// Fit and transform data using TriMap
-    pub fn fit_transform<'py>(&self, py: Python<'py>, data: PyReadonlyArray2<f64>) 
-        -> PyResult<Bound<'py, PyArray2<f64>>> 
-    {
+    pub fn fit_transform<'py>(
+        &self,
+        py: Python<'py>,
+        data: PyReadonlyArray2<f64>,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
         let x = data.as_array();
         let n_samples = x.nrows();
 
         if self.n_inliers + self.n_outliers >= n_samples {
             return Err(PyValueError::new_err(
-                "n_inliers + n_outliers must be less than n_samples"
+                "n_inliers + n_outliers must be less than n_samples",
             ));
         }
 
         // Convert to f32 for distance computation
-        let x_f32: Vec<Vec<f32>> = x.rows()
+        let x_f32: Vec<Vec<f32>> = x
+            .rows()
             .into_iter()
             .map(|row| row.iter().map(|&v| v as f32).collect())
             .collect();
@@ -93,7 +96,11 @@ impl TriMap {
 }
 
 impl TriMap {
-    fn generate_triplets(&self, distances: &Array2<f64>, n_samples: usize) -> Vec<(usize, usize, usize)> {
+    fn generate_triplets(
+        &self,
+        distances: &Array2<f64>,
+        n_samples: usize,
+    ) -> Vec<(usize, usize, usize)> {
         let mut rng: StdRng = match self.random_state {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => StdRng::from_seed(rand::random()),
@@ -114,7 +121,7 @@ impl TriMap {
             }
             let inliers: Vec<usize> = heap.into_iter().map(|(_, j)| j).collect();
 
-            // Find k farthest neighbors (outliers)  
+            // Find k farthest neighbors (outliers)
             let mut heap: BinaryHeap<(OrderedFloat<f64>, usize)> = BinaryHeap::new();
             for j in 0..n_samples {
                 if i != j && !inliers.contains(&j) {
@@ -150,20 +157,27 @@ impl TriMap {
         triplets
     }
 
-    fn compute_weights(&self, distances: &Array2<f64>, triplets: &[(usize, usize, usize)]) -> Vec<f64> {
+    fn compute_weights(
+        &self,
+        distances: &Array2<f64>,
+        triplets: &[(usize, usize, usize)],
+    ) -> Vec<f64> {
         // Weight based on distance difference
-        triplets.par_iter().map(|&(i, j, k)| {
-            let d_ij = distances[[i, j]];
-            let d_ik = distances[[i, k]];
-            let margin = d_ik - d_ij;
-            
-            // Higher weight for triplets with larger margin
-            if margin > 0.0 {
-                1.0 + self.weight_adj / (1.0 + d_ij)
-            } else {
-                1.0
-            }
-        }).collect()
+        triplets
+            .par_iter()
+            .map(|&(i, j, k)| {
+                let d_ij = distances[[i, j]];
+                let d_ik = distances[[i, k]];
+                let margin = d_ik - d_ij;
+
+                // Higher weight for triplets with larger margin
+                if margin > 0.0 {
+                    1.0 + self.weight_adj / (1.0 + d_ij)
+                } else {
+                    1.0
+                }
+            })
+            .collect()
     }
 
     fn initialize_embedding(&self, x: &Array2<f64>, n_samples: usize) -> PyResult<Array2<f64>> {
@@ -179,10 +193,10 @@ impl TriMap {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => StdRng::from_seed(rand::random()),
         };
-        
+
         let normal = Normal::new(0.0, 0.01).unwrap();
         let mut embedding = Array2::zeros((n_samples, self.n_components));
-        
+
         // Random initialization with reasonable scale
         for mut row in embedding.rows_mut() {
             for v in row.iter_mut() {
@@ -202,7 +216,7 @@ impl TriMap {
         embedding: &mut Array2<f64>,
         triplets: &[(usize, usize, usize)],
         weights: &[f64],
-        n_samples: usize
+        n_samples: usize,
     ) {
         let mut velocity = Array2::zeros((n_samples, self.n_components));
         let momentum = 0.5;
@@ -228,14 +242,14 @@ impl TriMap {
                 // We want d_ij < d_ik, so loss = max(0, d_ij - d_ik + margin)
                 let margin = 1.0;
                 let loss = d_ij_sq - d_ik_sq + margin;
-                
+
                 if loss > 0.0 {
                     let scale = 2.0 * weight / (triplets.len() as f64);
-                    
+
                     for c in 0..self.n_components {
                         let diff_ij = embedding[[i, c]] - embedding[[j, c]];
                         let diff_ik = embedding[[i, c]] - embedding[[k, c]];
-                        
+
                         // Gradient w.r.t. anchor
                         grad[[i, c]] += scale * (diff_ij - diff_ik);
                         // Gradient w.r.t. positive
@@ -336,7 +350,11 @@ mod tests {
         // Each triplet should have (anchor, positive_from_inliers, negative_from_outliers)
         // The algorithm pairs each inlier with each outlier
         // Expected count: n_samples * n_inliers * n_outliers = 20 * 3 * 2 = 120
-        assert_eq!(triplets.len(), 20 * 3 * 2, "Should have n_samples * n_inliers * n_outliers triplets");
+        assert_eq!(
+            triplets.len(),
+            20 * 3 * 2,
+            "Should have n_samples * n_inliers * n_outliers triplets"
+        );
     }
 
     #[test]
@@ -361,7 +379,11 @@ mod tests {
 
         let weights = trimap.compute_weights(&distances, &triplets);
 
-        assert_eq!(weights.len(), triplets.len(), "Should have one weight per triplet");
+        assert_eq!(
+            weights.len(),
+            triplets.len(),
+            "Should have one weight per triplet"
+        );
     }
 
     #[test]
@@ -389,7 +411,10 @@ mod tests {
         if !good_weights.is_empty() && !bad_weights.is_empty() {
             let avg_good: f64 = good_weights.iter().sum::<f64>() / good_weights.len() as f64;
             let avg_bad: f64 = bad_weights.iter().sum::<f64>() / bad_weights.len() as f64;
-            assert!(avg_good >= avg_bad, "Good triplets should have higher average weight");
+            assert!(
+                avg_good >= avg_bad,
+                "Good triplets should have higher average weight"
+            );
         }
     }
 
@@ -438,7 +463,10 @@ mod tests {
                 }
             }
         }
-        assert!(different, "Different seeds should produce different initializations");
+        assert!(
+            different,
+            "Different seeds should produce different initializations"
+        );
     }
 
     #[test]

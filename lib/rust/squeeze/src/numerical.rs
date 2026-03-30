@@ -70,10 +70,7 @@ pub fn validate_input_data(
     n_components: usize,
 ) -> Result<(), String> {
     if n_samples < 2 {
-        return Err(format!(
-            "Need at least 2 samples, got {}",
-            n_samples
-        ));
+        return Err(format!("Need at least 2 samples, got {}", n_samples));
     }
 
     if n_features < 1 {
