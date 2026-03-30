@@ -84,7 +84,7 @@ genesis_launch variant=circle_packing_example
 cd lib/rust && cargo build --release
 
 # Build squeeze Rust extension
-cd projects/squeeze && just install
+cd lib/rust/squeeze && maturin develop --release
 
 # Run pre-commit hooks
 prek run --all-files
