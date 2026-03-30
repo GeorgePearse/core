@@ -170,6 +170,11 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# devenv / Nix
+.devenv*
+devenv.lock
+.direnv
+
 # PyPI configuration file
 .pypirc
 .pre-commit-cache/
