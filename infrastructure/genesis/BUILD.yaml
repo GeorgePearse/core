@@ -1,0 +1,12 @@
+targets:
+  - name: fmt_check
+    command: terraform fmt -check -recursive
+    inputs:
+      - "*.tf"
+
+  - name: validate
+    command: terraform init -backend=false && terraform validate
+    inputs:
+      - "*.tf"
+    dependencies:
+      - :fmt_check

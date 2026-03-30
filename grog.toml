@@ -1,0 +1,11 @@
+fail_fast = true
+stream_logs = true
+num_workers = 4
+
+# Uncomment to enable GCS remote caching once the bucket is created:
+# [cache]
+# backend = "gcs"
+#
+# [cache.gcs]
+# bucket = "genesis-grog-cache"
+# prefix = "grog/"
