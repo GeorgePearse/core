@@ -37,6 +37,16 @@ repos:
 
   - repo: local
     hooks:
+      - id: ty
+        name: ty type checker
+        entry: ty check lib/python/genesis/
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [manual]
+
+  - repo: local
+    hooks:
       - id: oxlint
         name: oxlint (frontend)
         entry: bash -c 'cd genesis/webui/frontend && npx oxlint src/'

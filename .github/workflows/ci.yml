@@ -102,6 +102,31 @@ jobs:
           diff -u /tmp/full_ddl_repo.sql /tmp/full_ddl_ci.sql || \
             (echo "ERROR: migrations/full_ddl.sql is out of sync. Run scripts/export_ddl.sh and commit the result." && exit 1)
 
+  python-quality:
+    name: Python lint & type check (prek + ty)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Install prek and ty
+        run: uv tool install prek ty
+
+      - name: Run prek hooks (ruff + code quality checks)
+        run: |
+          prek install
+          prek install-hooks
+          prek run --all-files
+
+      - name: Run ty type checker
+        run: ty check lib/python/genesis/
+
   terraform-plan:
     name: Terraform plan
     runs-on: ubuntu-latest
