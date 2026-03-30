@@ -1,6 +1,6 @@
 targets:
   - name: lint_python
-    command: .venv/bin/ruff check --fix lib/python/ examples/ tests/
+    command: bash -c "source .venv/bin/activate && ruff check --fix lib/python/ examples/ tests/"
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -10,7 +10,7 @@ targets:
       - :python_install
 
   - name: lint_format
-    command: .venv/bin/ruff format --check lib/python/ examples/ tests/
+    command: bash -c "source .venv/bin/activate && ruff format --check lib/python/ examples/ tests/"
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -20,7 +20,7 @@ targets:
       - :python_install
 
   - name: typecheck
-    command: .venv/bin/zuban check
+    command: bash -c "source .venv/bin/activate && zuban check"
     inputs:
       - "lib/python/**/*.py"
       - "examples/**/*.py"
@@ -40,7 +40,7 @@ targets:
       - pyproject.toml
 
   - name: python_test
-    command: .venv/bin/pytest tests/ -x -q
+    command: bash -c "source .venv/bin/activate && pytest tests/ -x -q"
     inputs:
       - "tests/**/*.py"
       - "lib/python/genesis/**/*.py"
