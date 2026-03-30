@@ -35,10 +35,9 @@ targets:
       - lib/python/genesis/webui/frontend/Dockerfile
 
   - name: python_install
-    command: .venv/bin/python -m pip install -e ".[dev]" --quiet
+    command: "true"
     inputs:
       - pyproject.toml
-      - "lib/python/genesis/**/*.py"
 
   - name: python_test
     command: .venv/bin/pytest tests/ -x -q
