@@ -67,7 +67,7 @@ const MAX_RIGHT_PANEL_WIDTH = 1200;
 const DEFAULT_RIGHT_PANEL_WIDTH = 500;
 
 export default function MainContent() {
-  const { state, setRightTab, selectProgram: setProgram } = useGenesis();
+  const { state, setRightTab } = useGenesis();
   const { selectedLeftTab: activeTab, selectedRightTab, selectedProgram } = state;
 
   // Resizable panel state
@@ -141,9 +141,6 @@ export default function MainContent() {
     setRightPanelWidth(DEFAULT_RIGHT_PANEL_WIDTH);
   };
 
-  // Maximize code view state
-  const [isMaximized, setIsMaximized] = useState(false);
-
   const renderLeftPanel = () => {
     switch (activeTab) {
       case 'tree-view':
@@ -207,22 +204,6 @@ export default function MainContent() {
     }
   };
 
-  // Check if we should be in maximized code view mode
-  // This happens when a user selects a program while in the 'table-view' (Programs) tab
-  useEffect(() => {
-    if (activeTab === 'table-view' && selectedProgram) {
-      setIsMaximized(true);
-    } else if (!selectedProgram) {
-      setIsMaximized(false);
-    }
-  }, [activeTab, selectedProgram]);
-
-  // Handle exiting maximized view
-  const exitMaximized = () => {
-    setProgram(null);
-    setIsMaximized(false);
-  };
-
   // If no data loaded, show empty state
   if (state.programs.length === 0) {
     return (
@@ -260,37 +241,6 @@ export default function MainContent() {
     );
   }
 
-  // ... (existing check for SPLIT_VIEW_TABS)
-
-  // Maximized View Layout
-  if (isMaximized && activeTab === 'table-view' && selectedProgram) {
-    return (
-      <div className="flex-1 flex flex-col h-full bg-gray-950">
-        <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center gap-4">
-          <button
-            onClick={exitMaximized}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-md transition-colors"
-          >
-            ← Back to Programs
-          </button>
-          <div className="h-6 w-px bg-gray-700 mx-2" />
-          <div className="flex items-center gap-3 text-sm">
-            <span className="font-medium text-white">
-              {selectedProgram.metadata.patch_name || `Program ${selectedProgram.id}`}
-            </span>
-            <span className="text-gray-500">Gen {selectedProgram.generation}</span>
-            <span className="text-orange-400">
-              {selectedProgram.combined_score?.toFixed(4) ?? 'N/A'}
-            </span>
-          </div>
-        </div>
-        
-        <div className="flex-1 overflow-hidden p-4">
-          <CodeViewerPanel />
-        </div>
-      </div>
-    );
-  }
   const isSplitView = SPLIT_VIEW_TABS.includes(activeTab);
 
   if (!isSplitView) {
