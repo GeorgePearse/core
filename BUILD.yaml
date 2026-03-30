@@ -23,10 +23,10 @@ targets:
       - pyproject.toml
 
   - name: lint_docker
-    command: hadolint Dockerfile lib/rust/Dockerfile
+    command: hadolint Dockerfile lib/python/genesis/webui/frontend/Dockerfile
     inputs:
       - Dockerfile
-      - lib/rust/Dockerfile
+      - lib/python/genesis/webui/frontend/Dockerfile
 
   - name: python_install
     command: uv pip install -e ".[dev]" --quiet
