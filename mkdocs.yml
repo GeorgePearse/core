@@ -1,8 +1,8 @@
 site_name: Genesis
 site_description: LLM-Driven Program Evolution Platform
-site_url: https://genesis.ai
-repo_url: https://github.com/GeorgePearse/Genesis
-repo_name: GeorgePearse/Genesis
+site_url: https://georgepearse.github.io/core/
+repo_url: https://github.com/GeorgePearse/core
+repo_name: GeorgePearse/core
 
 theme:
   name: material
@@ -21,10 +21,16 @@ theme:
         name: Switch to light mode
   features:
     - navigation.tabs
+    - navigation.sections
     - navigation.top
     - navigation.indexes
+    - navigation.expand
     - content.code.copy
     - content.tabs.link
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
 
 plugins:
   - search
@@ -32,7 +38,7 @@ plugins:
       default_handler: python
       handlers:
         python:
-          paths: [.]
+          paths: [lib/python]
           options:
             show_root_heading: true
             show_source: true
@@ -57,21 +63,30 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Getting Started: getting_started.md
+  - Getting Started:
+      - Installation & Quick Start: getting_started.md
+      - Creating Tasks: creating_tasks.md
+      - Configuration: configuration.md
   - Guides:
-    - Configuration: configuration.md
-    - Available LLMs: available_llms.md
-    - Logging & Analytics: logging.md
-    - ClickHouse Integration: clickhouse.md
-    - WebUI: webui.md
-  - MCP Integration: mcp_integration.md
-  - DSPy Integration Ideas: dspy_integration.md
-  - Local LLM Support: support_local_llm.md
-  - Evolutionary Approach: evolutionary_approach.md
-  - Developer Guide: developer_guide.md
-  - Roadmap: roadmap.md
-  - Recent Papers: papers.md
-  - OpenR Integration: openr_integration.md
+      - Available LLMs: available_llms.md
+      - Local LLM Support: support_local_llm.md
+      - E2B Integration: e2b_integration.md
+      - Logging & Analytics: logging.md
+      - ClickHouse Integration: clickhouse.md
+      - WebUI: webui.md
+      - MCP Integration: mcp_integration.md
+  - Architecture:
+      - Evolutionary Approach: evolutionary_approach.md
+      - Modular Architecture: modular_architecture.md
+      - SAGA Integration: saga_integration.md
+  - Development:
+      - Developer Guide: developer_guide.md
+      - Dev Environment: devenv.md
+      - Roadmap: roadmap.md
+  - Research:
+      - Recent Papers: papers.md
+      - DSPy Integration Ideas: dspy_integration.md
+      - OpenR Integration: openr_integration.md
   - API Reference:
       - Core:
           - Runner: api/core/runner.md
