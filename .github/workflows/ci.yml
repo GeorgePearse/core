@@ -119,7 +119,7 @@ jobs:
         run: |
           uv tool install prek
           uv tool install ty
-          uv pip install zuban==0.2.3
+          uv pip install --system zuban==0.2.3
 
       - name: Run prek hooks (ruff + code quality checks)
         env:
