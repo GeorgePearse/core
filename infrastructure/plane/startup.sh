@@ -31,13 +31,9 @@ systemctl start docker
 mkdir -p /opt/plane
 cd /opt/plane
 
-# Download Plane Community Edition setup files
-curl -fsSL -o setup.sh https://prime.plane.so/install/
-chmod +x setup.sh
-
-# Run the installer in non-interactive mode
-# The installer downloads docker-compose.yml and variables.env, then starts services
-bash setup.sh --install
+# Run the Plane Community Edition installer in silent mode
+# This downloads prime-cli, which pulls docker-compose.yml and starts services
+curl -fsSL https://prime.plane.so/install/ | bash -s -- --silent
 
 touch "$MARKER"
 echo "Plane Community Edition installation complete."
