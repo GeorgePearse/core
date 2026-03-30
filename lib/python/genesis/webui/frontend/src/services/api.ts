@@ -19,6 +19,7 @@ export async function listDatabases(): Promise<DatabaseInfo[]> {
     }) => ({
       path: r.run_id,
       name: `${r.task_name} (${r.status})`,
+      task_name: r.task_name,
       sort_key: r.start_time,
       stats: {
         total: r.population_size,

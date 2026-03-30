@@ -84,31 +84,21 @@ function reducer(state: AppState, action: Action): AppState {
 // Helper to organize databases by task
 function organizeDatabases(dbs: DatabaseInfo[]): TasksAndResults {
   const tasksAndResults: TasksAndResults = {};
-
   dbs.forEach((db) => {
-    const pathParts = db.path.split('/');
-    if (pathParts.length >= 3) {
-      const task = pathParts[pathParts.length - 3];
-      const result = pathParts[pathParts.length - 2];
-
-      if (!tasksAndResults[task]) {
-        tasksAndResults[task] = [];
-      }
-
-      tasksAndResults[task].push({
-        name: result,
-        path: db.path,
-        sortKey: db.sort_key || '0',
-        stats: db.stats,
-      });
+    const task = db.task_name || 'Unknown';
+    if (!tasksAndResults[task]) {
+      tasksAndResults[task] = [];
     }
+    tasksAndResults[task].push({
+      name: db.name,
+      path: db.path,
+      sortKey: db.sort_key || '0',
+      stats: db.stats,
+    });
   });
-
-  // Sort results within each task by date (newest first)
   Object.keys(tasksAndResults).forEach((task) => {
     tasksAndResults[task].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   });
-
   return tasksAndResults;
 }
 

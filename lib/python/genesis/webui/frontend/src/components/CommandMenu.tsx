@@ -151,10 +151,8 @@ export default function CommandMenu() {
 
         <CommandGroup heading="Databases">
           {state.databases.map((db) => {
-             // Create a readable label
-             const parts = db.path.split('/');
-             const task = parts.length >= 3 ? parts[parts.length - 3] : 'Unknown';
-             const name = parts.length >= 2 ? parts[parts.length - 2] : 'Unknown';
+             const task = db.task_name || 'Unknown';
+             const name = db.name || 'Unknown';
              return (
                <CommandItem
                  key={db.path}
