@@ -80,6 +80,9 @@ target-version = "py312"
 select = ["E", "F", "I", "W"]
 ignore = ["E203", "E501"]
 
+[tool.ty]
+python-version = "3.12"
+
 [tool.zuban]
 target-version = "py3.12"
 include = ["lib/python/genesis", "examples"]
