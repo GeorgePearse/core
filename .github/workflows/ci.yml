@@ -116,7 +116,9 @@ jobs:
         uses: astral-sh/setup-uv@v2
 
       - name: Install prek and ty
-        run: uv tool install prek ty
+        run: |
+          uv tool install prek
+          uv tool install ty
 
       - name: Run prek hooks (ruff + code quality checks)
         run: |
