@@ -41,7 +41,7 @@ services:
   backend:
     build:
       context: lib/rust
-      dockerfile: Dockerfile
+      dockerfile: genesis_rust_backend/Dockerfile
     container_name: genesis-backend
     environment:
       DATABASE_URL: postgresql://genesis_app:${POSTGRES_PASSWORD:-genesis_dev}@postgres:5432/genesis
