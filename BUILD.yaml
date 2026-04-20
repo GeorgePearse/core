@@ -1,0 +1,59 @@
+targets:
+  - name: lint_python
+    command: bash -c "source .venv/bin/activate && ruff check --fix lib/python/ examples/ tests/"
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+    dependencies:
+      - :python_install
+
+  - name: lint_format
+    command: bash -c "echo CWD=$(pwd) && ls -la .venv/bin/ruff 2>&1 && source .venv/bin/activate && which ruff && ruff format --check lib/python/ examples/ tests/"
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+    dependencies:
+      - :python_install
+
+  - name: typecheck
+    command: bash -c "source .venv/bin/activate && zuban check"
+    inputs:
+      - "lib/python/**/*.py"
+      - "examples/**/*.py"
+      - pyproject.toml
+    dependencies:
+      - :python_install
+
+  - name: lint_docker
+    command: hadolint Dockerfile lib/python/genesis/webui/frontend/Dockerfile
+    inputs:
+      - Dockerfile
+      - lib/python/genesis/webui/frontend/Dockerfile
+
+  - name: python_install
+    command: "true"
+    inputs:
+      - pyproject.toml
+
+  - name: python_test
+    command: bash -c "source .venv/bin/activate && pytest tests/ -x -q"
+    inputs:
+      - "tests/**/*.py"
+      - "lib/python/genesis/**/*.py"
+      - pyproject.toml
+    dependencies:
+      - :python_install
+      - :lint_python
+      - :lint_format
+
+  - name: docs_build
+    command: "echo 'docs build skipped (mkdocs not in deps)'"
+    inputs:
+      - "docs/**/*.md"
+      - mkdocs.yml
+    tags:
+      - skip

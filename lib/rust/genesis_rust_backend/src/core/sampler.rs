@@ -139,8 +139,16 @@ impl PromptSampler {
         }
 
         msg.push_str("\n\n# Required Output\n");
-        msg.push_str("Return <NAME>, <DESCRIPTION>, and patch content.");
-        msg.push_str(&format!("\nPatch mode: {patch_type}"));
+        if patch_type == "full" {
+            msg.push_str(
+                "Return ONLY the complete improved program inside a single fenced code block.\n\
+                 Do NOT include any text before or after the code block.\n\
+                 The code must include ALL functions from the original program.",
+            );
+        } else {
+            msg.push_str("Return <NAME>, <DESCRIPTION>, and patch content.");
+            msg.push_str(&format!("\nPatch mode: {patch_type}"));
+        }
         msg
     }
 }

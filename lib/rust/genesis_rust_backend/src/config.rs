@@ -23,6 +23,7 @@ pub struct EvolutionConfig {
 
     pub scheduler_backend: String,
     pub eval_command: Option<String>,
+    pub init_program_path: Option<String>,
 
     pub alma_enabled: bool,
     pub alma_max_entries: usize,
@@ -61,6 +62,7 @@ impl Default for EvolutionConfig {
 
             scheduler_backend: "mock".to_string(),
             eval_command: None,
+            init_program_path: None,
 
             alma_enabled: true,
             alma_max_entries: 256,
