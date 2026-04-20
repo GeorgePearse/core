@@ -1,0 +1,3 @@
+fail_fast = true
+stream_logs = true
+load_outputs = "minimal"
