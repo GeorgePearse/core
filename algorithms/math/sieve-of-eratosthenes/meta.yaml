@@ -1,0 +1,13 @@
+name: sieve-of-eratosthenes
+category: math
+description: >
+  Finds all prime numbers up to a limit n by iteratively marking the multiples
+  of each prime as composite; the classic way to enumerate primes.
+complexity:
+  time_best: O(n log log n)
+  time_average: O(n log log n)
+  time_worst: O(n log log n)
+  space: O(n)
+tags: [math, primes, number-theory, sieve]
+references:
+  - https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes

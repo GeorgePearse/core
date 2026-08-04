@@ -1,0 +1,14 @@
+name: trie
+category: data-structures
+description: >
+  Prefix tree over lowercase words supporting insert, exact-word search, and
+  prefix search (starts_with) in time proportional to the key length; used
+  for autocomplete, spell checking, and prefix matching.
+complexity:
+  time_best: O(m) per op, m = word length
+  time_average: O(m) per op, m = word length
+  time_worst: O(m) per op, m = word length
+  space: O(total characters stored)
+tags: [data-structures, trie, prefix-tree, strings]
+references:
+  - https://en.wikipedia.org/wiki/Trie

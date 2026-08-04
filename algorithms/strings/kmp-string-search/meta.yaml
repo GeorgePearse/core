@@ -1,0 +1,14 @@
+name: kmp-string-search
+category: strings
+description: >
+  Knuth-Morris-Pratt substring search: finds all occurrences of a pattern in
+  a text in linear time by precomputing a failure (longest proper
+  prefix-suffix) table so the text pointer never backtracks.
+complexity:
+  time_best: O(n + m)
+  time_average: O(n + m)
+  time_worst: O(n + m)
+  space: O(m)
+tags: [strings, pattern-matching, kmp]
+references:
+  - https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm

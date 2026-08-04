@@ -1,0 +1,13 @@
+name: binary-search
+category: searching
+description: >
+  Locates a target value in a sorted array by repeatedly halving the search
+  interval; the standard way to search sorted data in logarithmic time.
+complexity:
+  time_best: O(1)
+  time_average: O(log n)
+  time_worst: O(log n)
+  space: O(1)
+tags: [searching, divide-and-conquer, sorted-input]
+references:
+  - https://en.wikipedia.org/wiki/Binary_search_algorithm

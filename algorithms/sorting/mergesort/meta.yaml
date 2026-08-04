@@ -1,0 +1,14 @@
+name: mergesort
+category: sorting
+description: >
+  Stable divide-and-conquer sort that recursively splits the input in half
+  and merges the sorted halves; the go-to choice when stability or a
+  guaranteed O(n log n) worst case matters.
+complexity:
+  time_best: O(n log n)
+  time_average: O(n log n)
+  time_worst: O(n log n)
+  space: O(n)
+tags: [sorting, divide-and-conquer, stable, comparison-sort]
+references:
+  - https://en.wikipedia.org/wiki/Merge_sort

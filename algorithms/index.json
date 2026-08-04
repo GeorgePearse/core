@@ -1,0 +1,416 @@
+{
+  "count": 16,
+  "algorithms": [
+    {
+      "name": "lru-cache",
+      "category": "data-structures",
+      "description": "Fixed-capacity key-value cache that evicts the least recently used entry when full; get and put run in O(1) via a hash map combined with a doubly linked list ordered by recency.\n",
+      "complexity": {
+        "time_best": "O(1) per op",
+        "time_average": "O(1) per op",
+        "time_worst": "O(1) per op",
+        "space": "O(capacity)"
+      },
+      "tags": [
+        "data-structures",
+        "cache",
+        "hash-map",
+        "linked-list"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)"
+      ],
+      "languages": {
+        "python": "data-structures/lru-cache/python.py",
+        "rust": "data-structures/lru-cache/rust.rs",
+        "typescript": "data-structures/lru-cache/typescript.ts",
+        "go": "data-structures/lru-cache/go.go"
+      }
+    },
+    {
+      "name": "trie",
+      "category": "data-structures",
+      "description": "Prefix tree over lowercase words supporting insert, exact-word search, and prefix search (starts_with) in time proportional to the key length; used for autocomplete, spell checking, and prefix matching.\n",
+      "complexity": {
+        "time_best": "O(m) per op, m = word length",
+        "time_average": "O(m) per op, m = word length",
+        "time_worst": "O(m) per op, m = word length",
+        "space": "O(total characters stored)"
+      },
+      "tags": [
+        "data-structures",
+        "trie",
+        "prefix-tree",
+        "strings"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Trie"
+      ],
+      "languages": {
+        "python": "data-structures/trie/python.py",
+        "rust": "data-structures/trie/rust.rs",
+        "typescript": "data-structures/trie/typescript.ts",
+        "go": "data-structures/trie/go.go"
+      }
+    },
+    {
+      "name": "union-find",
+      "category": "data-structures",
+      "description": "Disjoint-set data structure that tracks a partition of elements into non-overlapping sets, supporting near-constant-time union and find with path compression and union by rank; used for connectivity, Kruskal's MST, and grouping problems.\n",
+      "complexity": {
+        "time_best": "O(alpha(n)) per op",
+        "time_average": "O(alpha(n)) per op",
+        "time_worst": "O(alpha(n)) per op",
+        "space": "O(n)"
+      },
+      "tags": [
+        "data-structures",
+        "disjoint-set",
+        "union-find",
+        "connectivity"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+      ],
+      "languages": {
+        "python": "data-structures/union-find/python.py",
+        "rust": "data-structures/union-find/rust.rs",
+        "typescript": "data-structures/union-find/typescript.ts",
+        "go": "data-structures/union-find/go.go"
+      }
+    },
+    {
+      "name": "edit-distance",
+      "category": "dynamic-programming",
+      "description": "Computes the Levenshtein distance between two strings: the minimum number of single-character insertions, deletions, and substitutions (unit costs) needed to transform one into the other.\n",
+      "complexity": {
+        "time_best": "O(mn)",
+        "time_average": "O(mn)",
+        "time_worst": "O(mn)",
+        "space": "O(mn)"
+      },
+      "tags": [
+        "dynamic-programming",
+        "strings",
+        "levenshtein"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Levenshtein_distance"
+      ],
+      "languages": {
+        "python": "dynamic-programming/edit-distance/python.py",
+        "rust": "dynamic-programming/edit-distance/rust.rs",
+        "typescript": "dynamic-programming/edit-distance/typescript.ts",
+        "go": "dynamic-programming/edit-distance/go.go"
+      }
+    },
+    {
+      "name": "knapsack-01",
+      "category": "dynamic-programming",
+      "description": "Solves the 0/1 knapsack problem: given items with weights and values and a capacity, choose a subset of items (each used at most once) maximizing total value without exceeding capacity; classic bottom-up DP table.\n",
+      "complexity": {
+        "time_best": "O(n * W)",
+        "time_average": "O(n * W)",
+        "time_worst": "O(n * W)",
+        "space": "O(n * W)"
+      },
+      "tags": [
+        "dynamic-programming",
+        "optimization",
+        "knapsack"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Knapsack_problem"
+      ],
+      "languages": {
+        "python": "dynamic-programming/knapsack-01/python.py",
+        "rust": "dynamic-programming/knapsack-01/rust.rs",
+        "typescript": "dynamic-programming/knapsack-01/typescript.ts",
+        "go": "dynamic-programming/knapsack-01/go.go"
+      }
+    },
+    {
+      "name": "longest-common-subsequence",
+      "category": "dynamic-programming",
+      "description": "Finds the longest subsequence common to two sequences (characters in order, not necessarily contiguous); the classic DP table with backtracking to reconstruct the subsequence itself.\n",
+      "complexity": {
+        "time_best": "O(mn)",
+        "time_average": "O(mn)",
+        "time_worst": "O(mn)",
+        "space": "O(mn)"
+      },
+      "tags": [
+        "dynamic-programming",
+        "strings",
+        "subsequence"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Longest_common_subsequence"
+      ],
+      "languages": {
+        "python": "dynamic-programming/longest-common-subsequence/python.py",
+        "rust": "dynamic-programming/longest-common-subsequence/rust.rs",
+        "typescript": "dynamic-programming/longest-common-subsequence/typescript.ts",
+        "go": "dynamic-programming/longest-common-subsequence/go.go"
+      }
+    },
+    {
+      "name": "breadth-first-search",
+      "category": "graph",
+      "description": "Level-order graph traversal from a source node using a FIFO queue; visits all nodes at distance k before any node at distance k + 1 and finds shortest paths by edge count in unweighted graphs.\n",
+      "complexity": {
+        "time_best": "O(V + E)",
+        "time_average": "O(V + E)",
+        "time_worst": "O(V + E)",
+        "space": "O(V)"
+      },
+      "tags": [
+        "graph",
+        "traversal",
+        "shortest-path",
+        "queue"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Breadth-first_search"
+      ],
+      "languages": {
+        "python": "graph/breadth-first-search/python.py",
+        "rust": "graph/breadth-first-search/rust.rs",
+        "typescript": "graph/breadth-first-search/typescript.ts",
+        "go": "graph/breadth-first-search/go.go"
+      }
+    },
+    {
+      "name": "depth-first-search",
+      "category": "graph",
+      "description": "Graph traversal that follows each branch as deep as possible before backtracking; the building block for cycle detection, topological sorting, and connected-component analysis.\n",
+      "complexity": {
+        "time_best": "O(V + E)",
+        "time_average": "O(V + E)",
+        "time_worst": "O(V + E)",
+        "space": "O(V)"
+      },
+      "tags": [
+        "graph",
+        "traversal",
+        "recursion",
+        "stack"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Depth-first_search"
+      ],
+      "languages": {
+        "python": "graph/depth-first-search/python.py",
+        "rust": "graph/depth-first-search/rust.rs",
+        "typescript": "graph/depth-first-search/typescript.ts",
+        "go": "graph/depth-first-search/go.go"
+      }
+    },
+    {
+      "name": "dijkstra",
+      "category": "graph",
+      "description": "Single-source shortest paths in a weighted graph with non-negative edge weights, greedily settling the closest unsettled node using a min-priority queue (lazy-deletion binary heap).\n",
+      "complexity": {
+        "time_best": "O((V + E) log V)",
+        "time_average": "O((V + E) log V)",
+        "time_worst": "O((V + E) log V)",
+        "space": "O(V)"
+      },
+      "tags": [
+        "graph",
+        "shortest-path",
+        "greedy",
+        "priority-queue"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm"
+      ],
+      "languages": {
+        "python": "graph/dijkstra/python.py",
+        "rust": "graph/dijkstra/rust.rs",
+        "typescript": "graph/dijkstra/typescript.ts",
+        "go": "graph/dijkstra/go.go"
+      }
+    },
+    {
+      "name": "topological-sort",
+      "category": "graph",
+      "description": "Orders the nodes of a directed acyclic graph so that every edge points from an earlier node to a later one, using Kahn's in-degree/queue algorithm; reports an error when the graph contains a cycle.\n",
+      "complexity": {
+        "time_best": "O(V + E)",
+        "time_average": "O(V + E)",
+        "time_worst": "O(V + E)",
+        "space": "O(V)"
+      },
+      "tags": [
+        "graph",
+        "dag",
+        "ordering",
+        "kahns-algorithm"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Topological_sorting"
+      ],
+      "languages": {
+        "python": "graph/topological-sort/python.py",
+        "rust": "graph/topological-sort/rust.rs",
+        "typescript": "graph/topological-sort/typescript.ts",
+        "go": "graph/topological-sort/go.go"
+      }
+    },
+    {
+      "name": "sieve-of-eratosthenes",
+      "category": "math",
+      "description": "Finds all prime numbers up to a limit n by iteratively marking the multiples of each prime as composite; the classic way to enumerate primes.\n",
+      "complexity": {
+        "time_best": "O(n log log n)",
+        "time_average": "O(n log log n)",
+        "time_worst": "O(n log log n)",
+        "space": "O(n)"
+      },
+      "tags": [
+        "math",
+        "primes",
+        "number-theory",
+        "sieve"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes"
+      ],
+      "languages": {
+        "python": "math/sieve-of-eratosthenes/python.py",
+        "rust": "math/sieve-of-eratosthenes/rust.rs",
+        "typescript": "math/sieve-of-eratosthenes/typescript.ts",
+        "go": "math/sieve-of-eratosthenes/go.go"
+      }
+    },
+    {
+      "name": "binary-search",
+      "category": "searching",
+      "description": "Locates a target value in a sorted array by repeatedly halving the search interval; the standard way to search sorted data in logarithmic time.\n",
+      "complexity": {
+        "time_best": "O(1)",
+        "time_average": "O(log n)",
+        "time_worst": "O(log n)",
+        "space": "O(1)"
+      },
+      "tags": [
+        "searching",
+        "divide-and-conquer",
+        "sorted-input"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Binary_search_algorithm"
+      ],
+      "languages": {
+        "python": "searching/binary-search/python.py",
+        "rust": "searching/binary-search/rust.rs",
+        "typescript": "searching/binary-search/typescript.ts",
+        "go": "searching/binary-search/go.go"
+      }
+    },
+    {
+      "name": "heapsort",
+      "category": "sorting",
+      "description": "In-place comparison sort that builds a max-heap then repeatedly extracts the maximum; useful when a guaranteed O(n log n) worst case and O(1) auxiliary space both matter.\n",
+      "complexity": {
+        "time_best": "O(n log n)",
+        "time_average": "O(n log n)",
+        "time_worst": "O(n log n)",
+        "space": "O(1)"
+      },
+      "tags": [
+        "sorting",
+        "heap",
+        "in-place",
+        "comparison-sort"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Heapsort"
+      ],
+      "languages": {
+        "python": "sorting/heapsort/python.py",
+        "rust": "sorting/heapsort/rust.rs",
+        "typescript": "sorting/heapsort/typescript.ts",
+        "go": "sorting/heapsort/go.go"
+      }
+    },
+    {
+      "name": "mergesort",
+      "category": "sorting",
+      "description": "Stable divide-and-conquer sort that recursively splits the input in half and merges the sorted halves; the go-to choice when stability or a guaranteed O(n log n) worst case matters.\n",
+      "complexity": {
+        "time_best": "O(n log n)",
+        "time_average": "O(n log n)",
+        "time_worst": "O(n log n)",
+        "space": "O(n)"
+      },
+      "tags": [
+        "sorting",
+        "divide-and-conquer",
+        "stable",
+        "comparison-sort"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Merge_sort"
+      ],
+      "languages": {
+        "python": "sorting/mergesort/python.py",
+        "rust": "sorting/mergesort/rust.rs",
+        "typescript": "sorting/mergesort/typescript.ts",
+        "go": "sorting/mergesort/go.go"
+      }
+    },
+    {
+      "name": "quicksort",
+      "category": "sorting",
+      "description": "In-place divide-and-conquer sort that partitions around a pivot and recursively sorts each side; the usual default for fast general-purpose in-memory sorting when stability is not required.\n",
+      "complexity": {
+        "time_best": "O(n log n)",
+        "time_average": "O(n log n)",
+        "time_worst": "O(n^2)",
+        "space": "O(log n)"
+      },
+      "tags": [
+        "sorting",
+        "divide-and-conquer",
+        "in-place",
+        "comparison-sort"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Quicksort"
+      ],
+      "languages": {
+        "python": "sorting/quicksort/python.py",
+        "rust": "sorting/quicksort/rust.rs",
+        "typescript": "sorting/quicksort/typescript.ts",
+        "go": "sorting/quicksort/go.go"
+      }
+    },
+    {
+      "name": "kmp-string-search",
+      "category": "strings",
+      "description": "Knuth-Morris-Pratt substring search: finds all occurrences of a pattern in a text in linear time by precomputing a failure (longest proper prefix-suffix) table so the text pointer never backtracks.\n",
+      "complexity": {
+        "time_best": "O(n + m)",
+        "time_average": "O(n + m)",
+        "time_worst": "O(n + m)",
+        "space": "O(m)"
+      },
+      "tags": [
+        "strings",
+        "pattern-matching",
+        "kmp"
+      ],
+      "references": [
+        "https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm"
+      ],
+      "languages": {
+        "python": "strings/kmp-string-search/python.py",
+        "rust": "strings/kmp-string-search/rust.rs",
+        "typescript": "strings/kmp-string-search/typescript.ts",
+        "go": "strings/kmp-string-search/go.go"
+      }
+    }
+  ]
+}
