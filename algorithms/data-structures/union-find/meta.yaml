@@ -1,0 +1,15 @@
+name: union-find
+category: data-structures
+description: >
+  Disjoint-set data structure that tracks a partition of elements into
+  non-overlapping sets, supporting near-constant-time union and find with
+  path compression and union by rank; used for connectivity, Kruskal's MST,
+  and grouping problems.
+complexity:
+  time_best: O(alpha(n)) per op
+  time_average: O(alpha(n)) per op
+  time_worst: O(alpha(n)) per op
+  space: O(n)
+tags: [data-structures, disjoint-set, union-find, connectivity]
+references:
+  - https://en.wikipedia.org/wiki/Disjoint-set_data_structure

@@ -1,0 +1,14 @@
+name: topological-sort
+category: graph
+description: >
+  Orders the nodes of a directed acyclic graph so that every edge points
+  from an earlier node to a later one, using Kahn's in-degree/queue
+  algorithm; reports an error when the graph contains a cycle.
+complexity:
+  time_best: O(V + E)
+  time_average: O(V + E)
+  time_worst: O(V + E)
+  space: O(V)
+tags: [graph, dag, ordering, kahns-algorithm]
+references:
+  - https://en.wikipedia.org/wiki/Topological_sorting

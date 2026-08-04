@@ -1,0 +1,14 @@
+name: dijkstra
+category: graph
+description: >
+  Single-source shortest paths in a weighted graph with non-negative edge
+  weights, greedily settling the closest unsettled node using a min-priority
+  queue (lazy-deletion binary heap).
+complexity:
+  time_best: O((V + E) log V)
+  time_average: O((V + E) log V)
+  time_worst: O((V + E) log V)
+  space: O(V)
+tags: [graph, shortest-path, greedy, priority-queue]
+references:
+  - https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm

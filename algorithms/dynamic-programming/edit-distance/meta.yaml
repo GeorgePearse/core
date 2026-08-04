@@ -1,0 +1,14 @@
+name: edit-distance
+category: dynamic-programming
+description: >
+  Computes the Levenshtein distance between two strings: the minimum number
+  of single-character insertions, deletions, and substitutions (unit costs)
+  needed to transform one into the other.
+complexity:
+  time_best: O(mn)
+  time_average: O(mn)
+  time_worst: O(mn)
+  space: O(mn)
+tags: [dynamic-programming, strings, levenshtein]
+references:
+  - https://en.wikipedia.org/wiki/Levenshtein_distance

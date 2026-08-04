@@ -1,0 +1,14 @@
+name: knapsack-01
+category: dynamic-programming
+description: >
+  Solves the 0/1 knapsack problem: given items with weights and values and a
+  capacity, choose a subset of items (each used at most once) maximizing total
+  value without exceeding capacity; classic bottom-up DP table.
+complexity:
+  time_best: O(n * W)
+  time_average: O(n * W)
+  time_worst: O(n * W)
+  space: O(n * W)
+tags: [dynamic-programming, optimization, knapsack]
+references:
+  - https://en.wikipedia.org/wiki/Knapsack_problem

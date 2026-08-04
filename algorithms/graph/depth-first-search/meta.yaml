@@ -1,0 +1,14 @@
+name: depth-first-search
+category: graph
+description: >
+  Graph traversal that follows each branch as deep as possible before
+  backtracking; the building block for cycle detection, topological sorting,
+  and connected-component analysis.
+complexity:
+  time_best: O(V + E)
+  time_average: O(V + E)
+  time_worst: O(V + E)
+  space: O(V)
+tags: [graph, traversal, recursion, stack]
+references:
+  - https://en.wikipedia.org/wiki/Depth-first_search

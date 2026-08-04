@@ -1,0 +1,14 @@
+name: quicksort
+category: sorting
+description: >
+  In-place divide-and-conquer sort that partitions around a pivot and
+  recursively sorts each side; the usual default for fast general-purpose
+  in-memory sorting when stability is not required.
+complexity:
+  time_best: O(n log n)
+  time_average: O(n log n)
+  time_worst: O(n^2)
+  space: O(log n)
+tags: [sorting, divide-and-conquer, in-place, comparison-sort]
+references:
+  - https://en.wikipedia.org/wiki/Quicksort

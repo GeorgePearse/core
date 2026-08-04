@@ -1,0 +1,14 @@
+name: longest-common-subsequence
+category: dynamic-programming
+description: >
+  Finds the longest subsequence common to two sequences (characters in order,
+  not necessarily contiguous); the classic DP table with backtracking to
+  reconstruct the subsequence itself.
+complexity:
+  time_best: O(mn)
+  time_average: O(mn)
+  time_worst: O(mn)
+  space: O(mn)
+tags: [dynamic-programming, strings, subsequence]
+references:
+  - https://en.wikipedia.org/wiki/Longest_common_subsequence

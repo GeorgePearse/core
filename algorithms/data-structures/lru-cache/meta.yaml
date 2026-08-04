@@ -1,0 +1,14 @@
+name: lru-cache
+category: data-structures
+description: >
+  Fixed-capacity key-value cache that evicts the least recently used entry
+  when full; get and put run in O(1) via a hash map combined with a doubly
+  linked list ordered by recency.
+complexity:
+  time_best: O(1) per op
+  time_average: O(1) per op
+  time_worst: O(1) per op
+  space: O(capacity)
+tags: [data-structures, cache, hash-map, linked-list]
+references:
+  - https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)

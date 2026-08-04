@@ -1,0 +1,14 @@
+name: heapsort
+category: sorting
+description: >
+  In-place comparison sort that builds a max-heap then repeatedly extracts
+  the maximum; useful when a guaranteed O(n log n) worst case and O(1)
+  auxiliary space both matter.
+complexity:
+  time_best: O(n log n)
+  time_average: O(n log n)
+  time_worst: O(n log n)
+  space: O(1)
+tags: [sorting, heap, in-place, comparison-sort]
+references:
+  - https://en.wikipedia.org/wiki/Heapsort

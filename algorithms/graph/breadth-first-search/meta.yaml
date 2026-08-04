@@ -1,0 +1,14 @@
+name: breadth-first-search
+category: graph
+description: >
+  Level-order graph traversal from a source node using a FIFO queue; visits
+  all nodes at distance k before any node at distance k + 1 and finds
+  shortest paths by edge count in unweighted graphs.
+complexity:
+  time_best: O(V + E)
+  time_average: O(V + E)
+  time_worst: O(V + E)
+  space: O(V)
+tags: [graph, traversal, shortest-path, queue]
+references:
+  - https://en.wikipedia.org/wiki/Breadth-first_search
