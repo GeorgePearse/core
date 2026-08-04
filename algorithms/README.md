@@ -78,6 +78,12 @@ claude mcp add algorithms -- uv run --with fastmcp python /path/to/core/algorith
    and include a tiny `main`/`__main__` smoke test where idiomatic.
 3. Regenerate the index: `python algorithms/tools/build_index.py`.
 
+## Design notes
+
+- [Typed code storage research](docs/typed-code-storage-research.md) —
+  evaluation of Legend, Morphir, and Unison as storage backends, and the
+  plan for moving the library into a typed SQLite catalogue.
+
 ## Conventions
 
 - Implementations are reference-quality: clear over clever, standard library
