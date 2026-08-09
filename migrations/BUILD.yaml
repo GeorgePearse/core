@@ -1,0 +1,15 @@
+targets:
+  - name: validate
+    command: |
+      liquibase \
+        --url="jdbc:postgresql://localhost:5432/genesis" \
+        --username=genesis_app \
+        --password="${POSTGRES_PASSWORD:-genesis_dev}" \
+        --changeLogFile=changelogs/db.changelog-master.yaml \
+        validate
+    inputs:
+      - "changelogs/**/*.yaml"
+      - "changelogs/**/*.sql"
+      - liquibase.properties
+    tags:
+      - integration

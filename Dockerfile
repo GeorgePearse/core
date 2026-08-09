@@ -8,7 +8,7 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && r
 COPY lib/rust/genesis_rust_backend/src ./src
 RUN touch src/main.rs && cargo build --release
 
-FROM gcr.io/distroless/cc-debian12
+FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=builder /app/target/release/genesis_rust_backend /genesis_rust_backend
 ENV PORT=8080
 EXPOSE 8080

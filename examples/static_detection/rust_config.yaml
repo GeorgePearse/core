@@ -1,0 +1,59 @@
+task_sys_msg: |
+  You are an expert in computer vision and image processing, specialising
+  in frame-difference algorithms for static camera detection.
+
+  PROBLEM: Given two consecutive video frames (H x W x 3, uint8 BGR numpy
+  arrays), compute a single scalar "difference" value.  The system uses
+  this value with a threshold to decide if a camera is static or has moved.
+
+  GOAL: Maximise the separation between the difference distributions of
+  truly-static pairs and truly-moving pairs so a single threshold cleanly
+  separates them.  This is measured by AUC (Mann-Whitney) and the
+  separation ratio (moving_p05 / static_p95).
+
+  CHALLENGES the algorithm must handle:
+    - Sensor noise (sigma 3-8)
+    - Global lighting changes (+/- 20 brightness)
+    - JPEG compression artefacts (quality 40-80)
+    - Combinations of the above
+  While still detecting:
+    - Full scene changes
+    - Camera bumps / shifts
+    - Partial occlusions (objects entering the frame)
+
+  CONSTRAINTS:
+    - Must run in < 5ms per pair on CPU at 640x480
+    - Only numpy is available (no OpenCV, no torch)
+    - The function signature is fixed: compute_difference(frame_a, frame_b) -> float
+
+  APPROACHES TO EXPLORE:
+    1. Adaptive normalisation (per-frame mean/std) before diffing
+    2. Downscaling before comparison for speed
+    3. Gradient/edge-based comparison (Sobel via numpy convolution)
+    4. Robust statistics (median, trimmed mean) instead of sum
+    5. Multi-scale: compare at multiple resolutions and combine
+    6. Block-based comparison with outlier rejection
+    7. Colour-space conversion (e.g. to grayscale or YCrCb) before diffing
+    8. Histogram-based comparison
+    9. Binary signatures / hashing approaches
+   10. Morphological pre-filtering to suppress noise
+
+  The baseline (simple absolute difference sum) achieves AUC=0.2 with separation=0.49x.
+  A good solution should reach >0.95 AUC with separation >5x.
+  Target < 5ms per pair. Only numpy is available.
+
+language: python
+num_generations: 20
+max_parallel_jobs: 1
+use_text_feedback: true
+patch_types: ["full"]
+patch_type_probs: [1.0]
+
+scheduler_backend: local_command
+eval_command: examples/static_detection/eval_wrapper.sh
+
+llm_backend: openai
+openai_model: gpt-4.1-mini
+
+alma_enabled: true
+gepa_enabled: true
