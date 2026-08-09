@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 
 use genesis_rust_backend::config::EvolutionConfig;
+use genesis_rust_backend::core::runner::EvolutionRunner;
 use genesis_rust_backend::database::PgProgramDatabase;
 
 struct AppState {
@@ -31,6 +32,8 @@ async fn main() -> Result<()> {
         .init();
 
     let args: Vec<String> = std::env::args().collect();
+    let run_mode = args.iter().any(|a| a == "--run");
+
     let cfg = if let Some(idx) = args.iter().position(|a| a == "--config") {
         if let Some(path) = args.get(idx + 1) {
             EvolutionConfig::from_yaml_file(path)?
@@ -40,6 +43,15 @@ async fn main() -> Result<()> {
     } else {
         EvolutionConfig::default()
     };
+
+    if run_mode {
+        tracing::info!("starting evolution run");
+        let mut runner = EvolutionRunner::new(cfg);
+        runner.init_db().await?;
+        runner.run().await?;
+        tracing::info!("evolution run complete");
+        return Ok(());
+    }
 
     let database_url = cfg
         .database_url

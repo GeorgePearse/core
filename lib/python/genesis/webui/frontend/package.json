@@ -7,7 +7,7 @@
     "dev": "vite",
     "server": "tsx server/index.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "build": "tsc -b && oxlint . && vite build",
+    "build": "tsc -b && oxlint src/ && vite build",
     "lint": "eslint .",
     "lint:oxc": "oxlint .",
     "lint:fix": "eslint . --fix",
