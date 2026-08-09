@@ -10,45 +10,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust-check:
-    name: Rust lint & test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: lib/rust
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: lib/rust
-
-      - name: Check formatting
-        run: cargo fmt --check
-
-      - name: Clippy
-        run: cargo clippy -- -D warnings
-
-      - name: Unit tests
-        run: cargo test --lib
-
-      - name: Integration tests (testcontainers)
-        run: cargo test --test db_integration --test memory_tests
-
-  liquibase-validate:
-    name: Validate migrations
+  grog-build:
+    name: Build & Test (grog)
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: genesis_test
-          POSTGRES_USER: genesis
-          POSTGRES_PASSWORD: genesis_test
+          POSTGRES_DB: genesis
+          POSTGRES_USER: genesis_app
+          POSTGRES_PASSWORD: genesis_dev
         ports:
           - 5432:5432
         options: >-
@@ -59,6 +30,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install grog
+        run: |
+          curl -L https://grog.build/latest/grog-linux-amd64 -o /usr/local/bin/grog
+          chmod +x /usr/local/bin/grog
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: lib/rust
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv venv --python 3.12
+
+      - name: Install Python dependencies
+        run: |
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9"
+
+      - name: Install hadolint
+        run: |
+          wget -q https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -O /usr/local/bin/hadolint
+          chmod +x /usr/local/bin/hadolint
+
       - name: Install Liquibase
         run: |
           wget -q https://github.com/liquibase/liquibase/releases/download/v4.29.2/liquibase-4.29.2.tar.gz
@@ -66,92 +71,24 @@ jobs:
           tar xzf liquibase-4.29.2.tar.gz -C /opt/liquibase
           echo "/opt/liquibase" >> $GITHUB_PATH
 
-      - name: Validate changelogs
-        working-directory: migrations
+      - name: grog build-and-test
         run: |
-          liquibase \
-            --url="jdbc:postgresql://localhost:5432/genesis_test" \
-            --username=genesis \
-            --password=genesis_test \
-            --changeLogFile=changelogs/db.changelog-master.yaml \
-            validate
-
-      - name: Run migrations
-        working-directory: migrations
-        run: |
-          liquibase \
-            --url="jdbc:postgresql://localhost:5432/genesis_test" \
-            --username=genesis \
-            --password=genesis_test \
-            --changeLogFile=changelogs/db.changelog-master.yaml \
-            update
+          source .venv/bin/activate
+          grog build-and-test //...
+        env:
+          POSTGRES_PASSWORD: genesis_dev
 
       - name: Verify full_ddl.sql is in sync
         run: |
-          # Normalize function: strip version comments and other pg_dump metadata
           normalize() {
             sed '/^-- Dumped from database version/d; /^-- Dumped by pg_dump version/d; /^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d' "$1"
           }
-          PGPASSWORD=genesis_test pg_dump \
-            -h localhost -p 5432 -U genesis -d genesis_test \
+          PGPASSWORD=genesis_dev pg_dump \
+            -h localhost -p 5432 -U genesis_app -d genesis \
             --schema-only --no-owner --no-privileges \
             --exclude-table='databasechangelog*' \
             > /tmp/full_ddl_generated.sql
           normalize migrations/full_ddl.sql > /tmp/full_ddl_repo.sql
           normalize /tmp/full_ddl_generated.sql > /tmp/full_ddl_ci.sql
           diff -u /tmp/full_ddl_repo.sql /tmp/full_ddl_ci.sql || \
-            (echo "ERROR: migrations/full_ddl.sql is out of sync. Run scripts/export_ddl.sh and commit the result." && exit 1)
-
-  python-quality:
-    name: Python lint & type check (prek + ty)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v2
-
-      - name: Install tools
-        run: |
-          uv tool install prek
-          uv tool install ty
-          uv pip install --system zuban==0.2.3
-
-      - name: Run ruff lint
-        run: ruff check lib/python/genesis/ examples/ tests/ || true
-
-      - name: Run ruff format check
-        run: ruff format --check lib/python/genesis/ examples/ tests/ || true
-
-      - name: Run ty type checker
-        run: ty check lib/python/genesis/ || true
-
-  terraform-plan:
-    name: Terraform plan
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    strategy:
-      matrix:
-        module: [infrastructure/genesis, infrastructure/plane]
-    defaults:
-      run:
-        working-directory: ${{ matrix.module }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9"
-
-      - name: Terraform init
-        run: terraform init -backend=false
-
-      - name: Terraform validate
-        run: terraform validate
-
-      - name: Terraform format check
-        run: terraform fmt -check -recursive
+            (echo "ERROR: migrations/full_ddl.sql is out of sync." && exit 1)
