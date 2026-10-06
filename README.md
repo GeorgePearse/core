@@ -39,6 +39,10 @@ The framework supports **parallel evaluation of candidates** locally or in cloud
 | 🌐 **[Live Demo](https://genesis-frontend-a7eq2wihnq-nw.a.run.app/)** | Hosted Genesis frontend | Try Genesis in the browser |
 | 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |
 
+## Side-project research
+
+- [Domain registry ideas](docs/domain_registry_ideas.md): candidate public domain endings, commercial hypotheses, DNS mechanics, and ICANN application constraints.
+
 ## Installation & Quick Start 🚀
 
 ```bash

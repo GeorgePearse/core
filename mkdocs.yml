@@ -86,6 +86,7 @@ nav:
       - Dev Environment: devenv.md
       - Roadmap: roadmap.md
   - Research:
+      - Domain Registry Ideas: domain_registry_ideas.md
       - Recent Papers: papers.md
       - DSPy Integration Ideas: dspy_integration.md
       - OpenR Integration: openr_integration.md
