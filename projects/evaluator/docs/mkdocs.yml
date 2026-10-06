@@ -1,0 +1,97 @@
+site_name: evaluator
+site_description: Test instruction files like CLAUDE.md and AGENTS.md through automated backtesting
+site_author: George Pearse
+site_url: https://github.com/GeorgePearse/evaluator
+repo_url: https://github.com/GeorgePearse/evaluator
+repo_name: evaluator
+
+docs_dir: '.'
+site_dir: '../public'
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.select
+  palette:
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search:
+      lang: en
+  - mkdocstrings:
+      enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - User Guide:
+    - Writing Tests: guides/writing-tests.md
+    - Assertion Types: guides/assertions.md
+    - Diff Evaluation: guides/diff-evaluation.md
+    - Sandbox Execution: guides/sandbox.md
+    - Advanced Features: guides/advanced.md
+  - Architecture: architecture.md
+  - Reference:
+    - Python API: reference/api.md
+  - Examples:
+    - Basic Test: examples/basic-test.md
+  - Research & Design:
+    - Package Naming: research/naming.md
+    - Inspirations & Patterns: research/inspirations.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+      line_spans: __span
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - toc:
+      permalink: true
+      toc_depth: "2-3"
+  - admonition
+  - attr_list
+
+extra:
+  version:
+    provider: mike
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_ID

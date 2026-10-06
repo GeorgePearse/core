@@ -1,0 +1,1616 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Remove unused dependencies and code from Python virtual environments">
+      
+      
+      
+        <link rel="canonical" href="https://georgepearse.github.io/tsrs/MINIFY_DESIGN/">
+      
+      
+        <link rel="prev" href="../IMPLEMENTATION_GUIDE/">
+      
+      
+        <link rel="next" href="../TEST_REPOS_SUMMARY/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+    
+    
+      
+        <title>Minification Design - tsrs - Tree-Shaking in Rust for Python</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="light-blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#python-minification-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsrs - Tree-Shaking in Rust for Python" class="md-header__button md-logo" aria-label="tsrs - Tree-Shaking in Rust for Python" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsrs - Tree-Shaking in Rust for Python
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Minification Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="light-blue"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/GeorgePearse/tsrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeorgePearse/tsrs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../APPLICATIONS/" class="md-tabs__link">
+          
+  
+  Applications
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../API/" class="md-tabs__link">
+          
+  
+  Documentation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AGENTS/" class="md-tabs__link">
+          
+  
+  Architecture & Design
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CHANGELOG/" class="md-tabs__link">
+          
+  
+  Release Notes
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsrs - Tree-Shaking in Rust for Python" class="md-nav__button md-logo" aria-label="tsrs - Tree-Shaking in Rust for Python" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsrs - Tree-Shaking in Rust for Python
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/GeorgePearse/tsrs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GeorgePearse/tsrs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Applications
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Applications
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../APPLICATIONS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MINIFICATION_GUIDE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Minification Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TEST_SELECTION_GUIDE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Test Selection Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TRANSPILE_AI_GUIDE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AI Transpilation Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TESTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Documentation
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IMPLEMENTATION_GUIDE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Implementation Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Minification Design
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Minification Design
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Data Structures
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Data Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#functionplan" class="md-nav__link">
+    <span class="md-ellipsis">
+      FunctionPlan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minifyplan" class="md-nav__link">
+    <span class="md-ellipsis">
+      MinifyPlan
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-name-generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Short Name Generator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-keywords-complete-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python Keywords (Complete List)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ast-node-types-for-binding-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      AST Node Types for Binding Collection
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AST Node Types for Binding Collection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-function-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Function Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-assignment-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Assignment Targets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-for-loop-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. For Loop Targets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-with-statement-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. With Statement Targets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-exception-handler-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Exception Handler Names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-import-aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Import Aliases
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#name-extraction-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Name Extraction Algorithm
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exclusion-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exclusion Rules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Exclusion Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exclude-from-renaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exclude from renaming:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detection:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#collection-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Collection Algorithm
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scope Rules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scope Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#include-in-function-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Include in function scope:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exclude-from-function-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exclude from function scope:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stable-function-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stable Function Order
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serialization-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Serialization Example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Checklist
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      Edge Cases
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TEST_REPOS_SUMMARY/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Test Repositories
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CROSS_PACKAGE_ANALYSIS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cross-Package Analysis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Architecture & Design
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture & Design
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AGENTS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ALTERNATIVE_APPROACHES/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alternative Approaches
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Release Notes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="python-minification-design">Python Minification Design<a class="headerlink" href="#python-minification-design" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Scope-aware local renaming for functions using rustpython_parser AST. Collects function-local bindings and generates short names (a, b, c...) while respecting Python scoping rules.</p>
+<h2 id="core-data-structures">Core Data Structures<a class="headerlink" href="#core-data-structures" title="Permanent link">&para;</a></h2>
+<h3 id="functionplan">FunctionPlan<a class="headerlink" href="#functionplan" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">use</span><span class="w"> </span><span class="n">serde</span><span class="p">::{</span><span class="n">Deserialize</span><span class="p">,</span><span class="w"> </span><span class="n">Serialize</span><span class="p">};</span>
+<span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">collections</span><span class="p">::</span><span class="n">HashMap</span><span class="p">;</span>
+
+<span class="cp">#[derive(Debug, Clone, Serialize, Deserialize)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">FunctionPlan</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="sd">/// Function name (for debugging/tracking)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+
+<span class="w">    </span><span class="sd">/// Original names in function scope (sorted for stability)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">local_names</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+
+<span class="w">    </span><span class="sd">/// Mapping from original name to minified name</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">rename_map</span><span class="p">:</span><span class="w"> </span><span class="nc">HashMap</span><span class="o">&lt;</span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+
+<span class="w">    </span><span class="sd">/// Names that cannot be renamed (globals, nonlocals, builtins, keywords)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">excluded_names</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="minifyplan">MinifyPlan<a class="headerlink" href="#minifyplan" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="cp">#[derive(Debug, Clone, Serialize, Deserialize)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">MinifyPlan</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="sd">/// Function plans in stable order (by source position)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">functions</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">FunctionPlan</span><span class="o">&gt;</span><span class="p">,</span>
+
+<span class="w">    </span><span class="sd">/// Python keywords that must never be renamed</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">python_keywords</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+
+<span class="w">    </span><span class="sd">/// Builtin names that should not be renamed</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">builtins</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="short-name-generator">Short Name Generator<a class="headerlink" href="#short-name-generator" title="Permanent link">&para;</a></h2>
+<p>Simple sequential generator: a, b, c, ..., z, aa, ab, ..., zz, aaa, ...</p>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ShortNameGen</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">counter</span><span class="p">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">impl</span><span class="w"> </span><span class="n">ShortNameGen</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">new</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">Self</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="bp">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">counter</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">next</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">keywords</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="nb">String</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">loop</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span><span class="p">::</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">counter</span><span class="p">);</span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">counter</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="o">!</span><span class="n">keywords</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="w"> </span><span class="kt">usize</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">num</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">String</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+
+<span class="w">        </span><span class="k">loop</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">((</span><span class="sc">b&#39;a&#39;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">num</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">26</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="kt">char</span><span class="p">);</span>
+<span class="w">            </span><span class="n">num</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">26</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">num</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">num</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="n">result</span><span class="p">.</span><span class="n">chars</span><span class="p">().</span><span class="n">rev</span><span class="p">().</span><span class="n">collect</span><span class="p">()</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="python-keywords-complete-list">Python Keywords (Complete List)<a class="headerlink" href="#python-keywords-complete-list" title="Permanent link">&para;</a></h2>
+<p>Never rename these 35 keywords:</p>
+<div class="highlight"><pre><span></span><code><span class="k">const</span><span class="w"> </span><span class="n">PYTHON_KEYWORDS</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="o">&amp;</span><span class="kt">str</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="p">[</span>
+<span class="w">    </span><span class="s">&quot;False&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;None&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;True&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;and&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;as&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;assert&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;async&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;await&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;break&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;class&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;continue&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;def&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;del&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;elif&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;else&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;except&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;finally&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;for&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;from&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;global&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;if&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;import&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;in&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;is&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;lambda&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;nonlocal&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;not&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;or&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pass&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;raise&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;return&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;try&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;while&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;with&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;yield&quot;</span><span class="p">,</span>
+<span class="p">];</span>
+</code></pre></div>
+<h2 id="ast-node-types-for-binding-collection">AST Node Types for Binding Collection<a class="headerlink" href="#ast-node-types-for-binding-collection" title="Permanent link">&para;</a></h2>
+<h3 id="1-function-parameters">1. Function Parameters<a class="headerlink" href="#1-function-parameters" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::StmtFunctionDef, ast::StmtAsyncFunctionDef</span>
+<span class="n">parameters</span><span class="p">:</span><span class="w"> </span><span class="nc">Parameters</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">posonlyargs</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ParameterWithDefault</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// positional-only</span>
+<span class="w">    </span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ParameterWithDefault</span><span class="o">&gt;</span><span class="p">,</span><span class="w">         </span><span class="c1">// normal params</span>
+<span class="w">    </span><span class="n">vararg</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Parameter</span><span class="o">&gt;</span><span class="p">,</span><span class="w">               </span><span class="c1">// *args</span>
+<span class="w">    </span><span class="n">kwonlyargs</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">ParameterWithDefault</span><span class="o">&gt;</span><span class="p">,</span><span class="w">   </span><span class="c1">// keyword-only</span>
+<span class="w">    </span><span class="n">kwarg</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Parameter</span><span class="o">&gt;</span><span class="p">,</span><span class="w">                </span><span class="c1">// **kwargs</span>
+<span class="p">}</span>
+
+<span class="c1">// Extract: .arg (Identifier) from each Parameter</span>
+</code></pre></div>
+<h3 id="2-assignment-targets">2. Assignment Targets<a class="headerlink" href="#2-assignment-targets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::StmtAssign</span>
+<span class="n">targets</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Expr</span><span class="o">&gt;</span><span class="w">  </span><span class="c1">// Can be Name, Tuple, List, Subscript, Attribute</span>
+
+<span class="c1">// ast::StmtAnnAssign</span>
+<span class="n">target</span><span class="p">:</span><span class="w"> </span><span class="nc">Expr</span>
+
+<span class="c1">// ast::StmtAugAssign</span>
+<span class="n">target</span><span class="p">:</span><span class="w"> </span><span class="nc">Expr</span>
+
+<span class="c1">// Extract Name nodes: Expr::Name(ExprName { id, .. }) -&gt; id</span>
+</code></pre></div>
+<h3 id="3-for-loop-targets">3. For Loop Targets<a class="headerlink" href="#3-for-loop-targets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::StmtFor, ast::StmtAsyncFor</span>
+<span class="n">target</span><span class="p">:</span><span class="w"> </span><span class="nc">Expr</span><span class="w">  </span><span class="c1">// Can be Name, Tuple, List</span>
+
+<span class="c1">// Extract Name nodes recursively from target</span>
+</code></pre></div>
+<h3 id="4-with-statement-targets">4. With Statement Targets<a class="headerlink" href="#4-with-statement-targets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::StmtWith, ast::StmtAsyncWith</span>
+<span class="n">items</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">WithItem</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">context_expr</span><span class="p">:</span><span class="w"> </span><span class="nc">Expr</span><span class="p">,</span>
+<span class="w">    </span><span class="n">optional_vars</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Expr</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// Extract Name from this</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="5-exception-handler-names">5. Exception Handler Names<a class="headerlink" href="#5-exception-handler-names" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::ExceptHandler::ExceptHandler</span>
+<span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Identifier</span><span class="o">&gt;</span><span class="w">  </span><span class="c1">// The &#39;e&#39; in &#39;except Error as e&#39;</span>
+</code></pre></div>
+<h3 id="6-import-aliases">6. Import Aliases<a class="headerlink" href="#6-import-aliases" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// ast::StmtImport</span>
+<span class="n">names</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Alias</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nc">Identifier</span><span class="p">,</span>
+<span class="w">    </span><span class="n">asname</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Identifier</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// Use asname if present, else name</span>
+<span class="p">}</span>
+
+<span class="c1">// ast::StmtImportFrom</span>
+<span class="n">names</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Alias</span><span class="o">&gt;</span><span class="w">  </span><span class="c1">// Same structure</span>
+</code></pre></div>
+<h2 id="name-extraction-algorithm">Name Extraction Algorithm<a class="headerlink" href="#name-extraction-algorithm" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">extract_names</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Expr</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">match</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Expr</span><span class="p">::</span><span class="n">Name</span><span class="p">(</span><span class="n">ExprName</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="fm">vec!</span><span class="p">[</span><span class="n">id</span><span class="p">.</span><span class="n">to_string</span><span class="p">()],</span>
+
+<span class="w">        </span><span class="n">Expr</span><span class="p">::</span><span class="n">Tuple</span><span class="p">(</span><span class="n">ExprTuple</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">elts</span><span class="p">,</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="o">|</span>
+<span class="w">        </span><span class="n">Expr</span><span class="p">::</span><span class="n">List</span><span class="p">(</span><span class="n">ExprList</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">elts</span><span class="p">,</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">elts</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="n">flat_map</span><span class="p">(</span><span class="o">|</span><span class="n">e</span><span class="o">|</span><span class="w"> </span><span class="n">extract_names</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">                </span><span class="p">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Subscript/Attribute don&#39;t bind new names</span>
+<span class="w">        </span><span class="n">_</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="fm">vec!</span><span class="p">[],</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="exclusion-rules">Exclusion Rules<a class="headerlink" href="#exclusion-rules" title="Permanent link">&para;</a></h2>
+<h3 id="exclude-from-renaming">Exclude from renaming:<a class="headerlink" href="#exclude-from-renaming" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Keywords</strong>: All 35 Python keywords</li>
+<li><strong>Builtins</strong>: Common builtins (configurable list)</li>
+<li><strong>Global declarations</strong>: Names in <code>global</code> statements</li>
+<li><strong>Nonlocal declarations</strong>: Names in <code>nonlocal</code> statements</li>
+<li><strong>Class-scoped names</strong>: Do not process class bodies</li>
+<li><strong>Single underscores</strong>: <code>_</code> (convention for unused variables)</li>
+<li><strong>Dunder names</strong>: <code>__name__</code>, <code>__init__</code>, etc.</li>
+</ol>
+<h3 id="detection">Detection:<a class="headerlink" href="#detection" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">should_exclude</span><span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="kt">str</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;_&quot;</span><span class="w"> </span><span class="o">||</span>
+<span class="w">    </span><span class="n">name</span><span class="p">.</span><span class="n">starts_with</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="n">ends_with</span><span class="p">(</span><span class="s">&quot;__&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">    </span><span class="n">PYTHON_KEYWORDS</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="o">&amp;</span><span class="n">name</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">collect_global_nonlocal</span><span class="p">(</span><span class="n">body</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">Stmt</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">body</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="n">filter_map</span><span class="p">(</span><span class="o">|</span><span class="n">stmt</span><span class="o">|</span><span class="w"> </span><span class="k">match</span><span class="w"> </span><span class="n">stmt</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">Stmt</span><span class="p">::</span><span class="n">Global</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">g</span><span class="p">.</span><span class="n">names</span><span class="p">.</span><span class="n">iter</span><span class="p">()),</span>
+<span class="w">            </span><span class="n">Stmt</span><span class="p">::</span><span class="n">Nonlocal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">n</span><span class="p">.</span><span class="n">names</span><span class="p">.</span><span class="n">iter</span><span class="p">()),</span>
+<span class="w">            </span><span class="n">_</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="nb">None</span><span class="p">,</span>
+<span class="w">        </span><span class="p">})</span>
+<span class="w">        </span><span class="p">.</span><span class="n">flatten</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">id</span><span class="o">|</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="w">        </span><span class="p">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="collection-algorithm">Collection Algorithm<a class="headerlink" href="#collection-algorithm" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">collect_function_bindings</span><span class="p">(</span><span class="n">func</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">StmtFunctionDef</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">FunctionPlan</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">bindings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Vec</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">excluded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Vec</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 1. Collect global/nonlocal declarations</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">protected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">collect_global_nonlocal</span><span class="p">(</span><span class="o">&amp;</span><span class="n">func</span><span class="p">.</span><span class="n">body</span><span class="p">);</span>
+<span class="w">    </span><span class="n">excluded</span><span class="p">.</span><span class="n">extend</span><span class="p">(</span><span class="n">protected</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+
+<span class="w">    </span><span class="c1">// 2. Collect parameters</span>
+<span class="w">    </span><span class="n">collect_params</span><span class="p">(</span><span class="o">&amp;</span><span class="n">func</span><span class="p">.</span><span class="n">parameters</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="n">bindings</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 3. Traverse body for assignments, loops, withs, excepts, imports</span>
+<span class="w">    </span><span class="n">collect_from_body</span><span class="p">(</span><span class="o">&amp;</span><span class="n">func</span><span class="p">.</span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="n">bindings</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">protected</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 4. Remove excluded patterns</span>
+<span class="w">    </span><span class="n">bindings</span><span class="p">.</span><span class="n">retain</span><span class="p">(</span><span class="o">|</span><span class="n">name</span><span class="o">|</span><span class="w"> </span><span class="o">!</span><span class="n">should_exclude</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">protected</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">name</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 5. Sort for stability</span>
+<span class="w">    </span><span class="n">bindings</span><span class="p">.</span><span class="n">sort</span><span class="p">();</span>
+<span class="w">    </span><span class="n">bindings</span><span class="p">.</span><span class="n">dedup</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 6. Generate rename map</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">gen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ShortNameGen</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">rename_map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HashMap</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bindings</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">short</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gen</span><span class="p">.</span><span class="n">next</span><span class="p">(</span><span class="o">&amp;</span><span class="n">PYTHON_KEYWORDS</span><span class="p">.</span><span class="n">iter</span><span class="p">().</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">to_string</span><span class="p">()).</span><span class="n">collect</span><span class="p">::</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">_</span><span class="o">&gt;&gt;</span><span class="p">());</span>
+<span class="w">        </span><span class="n">rename_map</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span><span class="w"> </span><span class="n">short</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">FunctionPlan</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nc">func</span><span class="p">.</span><span class="n">name</span><span class="p">.</span><span class="n">to_string</span><span class="p">(),</span>
+<span class="w">        </span><span class="n">local_names</span><span class="p">:</span><span class="w"> </span><span class="nc">bindings</span><span class="p">,</span>
+<span class="w">        </span><span class="n">rename_map</span><span class="p">,</span>
+<span class="w">        </span><span class="n">excluded_names</span><span class="p">:</span><span class="w"> </span><span class="nc">excluded</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="scope-rules">Scope Rules<a class="headerlink" href="#scope-rules" title="Permanent link">&para;</a></h2>
+<h3 id="include-in-function-scope">Include in function scope:<a class="headerlink" href="#include-in-function-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Function parameters (all types)</li>
+<li>Assignment targets (direct names only, not attributes/subscripts)</li>
+<li>For/AsyncFor targets</li>
+<li>With/AsyncWith optional_vars</li>
+<li>ExceptHandler names</li>
+<li>Import/ImportFrom aliases (the asname or name)</li>
+</ul>
+<h3 id="exclude-from-function-scope">Exclude from function scope:<a class="headerlink" href="#exclude-from-function-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Class definitions (process separately, not recursively)</li>
+<li>Nested function definitions (process separately)</li>
+<li>Global/nonlocal declared names</li>
+<li>Attribute access (obj.attr - only rename obj)</li>
+<li>Subscript access (obj[key] - only rename obj/key)</li>
+</ul>
+<h2 id="stable-function-order">Stable Function Order<a class="headerlink" href="#stable-function-order" title="Permanent link">&para;</a></h2>
+<p>Collect functions in source order:</p>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">collect_functions_stable</span><span class="p">(</span><span class="n">module</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">ast</span><span class="p">::</span><span class="n">Mod</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;&amp;</span><span class="n">StmtFunctionDef</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">funcs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Vec</span><span class="p">::</span><span class="n">new</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">match</span><span class="w"> </span><span class="n">module</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ast</span><span class="p">::</span><span class="n">Mod</span><span class="p">::</span><span class="n">Module</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">visit_stmts_for_functions</span><span class="p">(</span><span class="o">&amp;</span><span class="n">m</span><span class="p">.</span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="n">funcs</span><span class="p">),</span>
+<span class="w">        </span><span class="n">ast</span><span class="p">::</span><span class="n">Mod</span><span class="p">::</span><span class="n">Expression</span><span class="p">(</span><span class="n">_</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">funcs</span><span class="w">  </span><span class="c1">// Already in source order</span>
+<span class="p">}</span>
+
+<span class="k">fn</span><span class="w"> </span><span class="nf">visit_stmts_for_functions</span><span class="o">&lt;&#39;</span><span class="na">a</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="n">stmts</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="o">&#39;</span><span class="na">a</span><span class="w"> </span><span class="p">[</span><span class="n">Stmt</span><span class="p">],</span>
+<span class="w">    </span><span class="n">funcs</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;&amp;&#39;</span><span class="na">a</span><span class="w"> </span><span class="n">StmtFunctionDef</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">stmt</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">stmts</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">match</span><span class="w"> </span><span class="n">stmt</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">Stmt</span><span class="p">::</span><span class="n">FunctionDef</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">funcs</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+<span class="w">            </span><span class="n">Stmt</span><span class="p">::</span><span class="n">AsyncFunctionDef</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="c1">// Convert async to sync representation if needed</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">Stmt</span><span class="p">::</span><span class="n">ClassDef</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="c1">// Don&#39;t recurse into class bodies</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="c1">// Don&#39;t recurse into nested scopes</span>
+<span class="w">            </span><span class="n">_</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="serialization-example">Serialization Example<a class="headerlink" href="#serialization-example" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;functions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;calculate&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;local_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;value&quot;</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;rename_map&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;temp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;b&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;c&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;excluded_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;global_config&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;python_keywords&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;False&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;None&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;builtins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;print&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;len&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;range&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="implementation-checklist">Implementation Checklist<a class="headerlink" href="#implementation-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] Define <code>FunctionPlan</code> and <code>MinifyPlan</code> structs with serde</li>
+<li>[ ] Implement <code>ShortNameGen</code> with tests</li>
+<li>[ ] Create <code>PYTHON_KEYWORDS</code> constant</li>
+<li>[ ] Implement <code>extract_names()</code> for recursive name extraction</li>
+<li>[ ] Implement <code>should_exclude()</code> filter</li>
+<li>[ ] Implement <code>collect_global_nonlocal()</code></li>
+<li>[ ] Implement parameter collection</li>
+<li>[ ] Implement body traversal for all binding forms</li>
+<li>[ ] Implement stable function ordering</li>
+<li>[ ] Add comprehensive tests for each AST node type</li>
+<li>[ ] Verify serialization round-trip</li>
+</ul>
+<h2 id="edge-cases">Edge Cases<a class="headerlink" href="#edge-cases" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Tuple unpacking</strong>: <code>a, b = foo()</code> - extract both <code>a</code> and <code>b</code></li>
+<li><strong>Nested unpacking</strong>: <code>a, (b, c) = foo()</code> - extract <code>a</code>, <code>b</code>, <code>c</code></li>
+<li><strong>Walrus operator</strong>: <code>:=</code> creates bindings in expressions (handle carefully)</li>
+<li><strong>List comprehension variables</strong>: Lexically scoped, don't leak (skip)</li>
+<li><strong>Match patterns</strong>: Variable bindings in match cases (include)</li>
+<li><strong>Type parameters</strong> (3.12+): Generic type vars (include if present)</li>
+</ol>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>This design focuses on <strong>planning</strong> only - no AST rewriting</li>
+<li>Output is JSON-serializable for external tools</li>
+<li>Function order is deterministic (source position)</li>
+<li>Name collisions avoided by checking keywords in generator</li>
+<li>Class scope deliberately excluded (different minification strategy needed)</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://github.com/liftoff/pyminifier">pyminifier (liftoffsoftware)</a></li>
+<li><a href="https://github.com/sclabs/treeshaker">TreeShaker (sclabs)</a></li>
+<li><a href="https://dev.to/georgepearse/build-a-python-tree-shaker-in-rust-2n4h">“Build a Python tree-shaker in Rust” (dev.to)</a></li>
+<li><a href="https://dev.to/sam152/crude-python-tree-shaking-for-squeezing-into-aws-lambda-package-size-limits-357a">“Crude Python tree-shaking for squeezing into AWS Lambda package size limits” (sam152)</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.top", "toc.integrate", "content.code.copy"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>

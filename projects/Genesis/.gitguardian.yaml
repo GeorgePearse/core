@@ -1,0 +1,13 @@
+# GitGuardian configuration
+# See: https://docs.gitguardian.com/ggshield-docs/reference/gitguardian-yaml
+
+paths-ignore:
+  # Example env file with placeholder values, not real secrets
+  - ".env.example"
+
+  # Terraform files use variable interpolation, not literal secrets
+  - "terraform/*.tf"
+
+  # Test fixtures use ephemeral local containers
+  - "genesis_rust_backend/tests/**"
+  - "**/tests/**"

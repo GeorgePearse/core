@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-06",
+  "destination": "https://github.com/GeorgePearse/core",
+  "import_mode": "exact tracked tree snapshots; default branches except recorded memetics PR; no original commit history or external LFS payloads",
+  "selection": {
+    "scope": "ten public repositories owned by GeorgePearse",
+    "criteria": [
+      "substantial implemented content",
+      "sustained account-attributed development",
+      "tests, documentation, or benchmarks",
+      "useful coverage across numerical computing, vision, and agent tooling"
+    ],
+    "note": "Qualitative curation based on implemented content and personal effort. Memetics replaces LinearManager at the owner request; its unmerged Rust implementation is explicitly pinned. Memetics was made public with owner authorization before this import."
+  },
+  "projects": [
+    {
+      "name": "Genesis",
+      "path": "projects/Genesis",
+      "source_repository": "https://github.com/GeorgePearse/Genesis",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "0f17748a4c8c6dbd53de8bdbd7e13d92da8f1a0c",
+      "source_tree": "a44789710b4fd7357bc557ae23f469d941c47237",
+      "source_commit_date": "2026-09-24T18:48:23Z",
+      "account_attributed_commits": 97,
+      "tracked_files": 343,
+      "tracked_bytes": 7958074,
+      "detected_license": "Apache-2.0",
+      "license_files": [
+        "LICENSE"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Program evolution platform",
+      "selection_reason": "97 account-attributed commits; Python orchestration, Rust backend, frontend, tests, deployment tooling, and documentation."
+    },
+    {
+      "name": "squeeze",
+      "path": "projects/squeeze",
+      "source_repository": "https://github.com/GeorgePearse/squeeze",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "2397360df5833fcfc5a575b9188379e38681103f",
+      "source_tree": "85542def926300fc2c236376207eeaaa01eb5916",
+      "source_commit_date": "2025-12-24T19:12:52Z",
+      "account_attributed_commits": 83,
+      "tracked_files": 564,
+      "tracked_bytes": 83433758,
+      "detected_license": "Apache-2.0",
+      "license_files": [
+        "LICENSE.txt"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Dimensionality reduction",
+      "selection_reason": "83 account-attributed commits; Python/Rust algorithms, benchmark material, tests, and extensive documentation."
+    },
+    {
+      "name": "bayesian_filters",
+      "path": "projects/bayesian_filters",
+      "source_repository": "https://github.com/GeorgePearse/bayesian_filters",
+      "source_visibility": "public",
+      "source_branch": "master",
+      "source_commit": "9cef532e6df9d05a23a440e76a311e6730950b89",
+      "source_tree": "763d2c132a3f287e2f2488f64cca31f377b74c6a",
+      "source_commit_date": "2026-09-08T08:46:23Z",
+      "account_attributed_commits": 79,
+      "tracked_files": 135,
+      "tracked_bytes": 780679,
+      "detected_license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Bayesian filtering library",
+      "selection_reason": "79 account-attributed commits; broad filtering APIs, reference tests, examples, and documentation."
+    },
+    {
+      "name": "mcp-tui-test",
+      "path": "projects/mcp-tui-test",
+      "source_repository": "https://github.com/GeorgePearse/mcp-tui-test",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "bbdd9003eaefd0609d86707abdb5d32d1540b25c",
+      "source_tree": "ed9f64909c5f4f42bddcaa463ae33eb2f6497557",
+      "source_commit_date": "2026-10-06T18:57:30Z",
+      "account_attributed_commits": 16,
+      "tracked_files": 32,
+      "tracked_bytes": 134765,
+      "detected_license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Terminal UI testing over MCP",
+      "selection_reason": "16 account-attributed commits; Python and Go implementations, tests, examples, and the recently merged Material documentation."
+    },
+    {
+      "name": "rust-copy-paste",
+      "path": "projects/rust-copy-paste",
+      "source_repository": "https://github.com/GeorgePearse/rust-copy-paste",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "01cdbbe877fa9946a02fd6e0b230878ef001b2df",
+      "source_tree": "b4057e025b0b5ad4aebbb95f414d7a3e8e530133",
+      "source_commit_date": "2025-11-19T17:40:36Z",
+      "account_attributed_commits": 83,
+      "tracked_files": 218,
+      "tracked_bytes": 2885769,
+      "detected_license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [
+        "AGENTS.md"
+      ],
+      "purpose": "Computer-vision augmentation",
+      "selection_reason": "83 account-attributed commits; Rust implementation, Python packaging, benchmark material, and test fixtures."
+    },
+    {
+      "name": "vision-agents",
+      "path": "projects/vision-agents",
+      "source_repository": "https://github.com/GeorgePearse/vision-agents",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "d6bbc028e44f9d811e886217fb21d70718b00621",
+      "source_tree": "3fa913c01aa759aca004cc4f4d2adde75962bb21",
+      "source_commit_date": "2026-04-08T22:44:47Z",
+      "account_attributed_commits": 118,
+      "tracked_files": 69,
+      "tracked_bytes": 21399712,
+      "detected_license": null,
+      "license_files": [],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Vision experiments and tooling",
+      "selection_reason": "118 account-attributed commits; active-learning runner, agent tooling, frontend, tests, and presentation material."
+    },
+    {
+      "name": "tsrs",
+      "path": "projects/tsrs",
+      "source_repository": "https://github.com/GeorgePearse/tsrs",
+      "source_visibility": "public",
+      "source_branch": "master",
+      "source_commit": "6ecb112f4f7ba8868804ed9d5cb9e71ca8002de0",
+      "source_tree": "04bba154241af72ba4b850695ba401632f415fc7",
+      "source_commit_date": "2025-11-09T12:57:47Z",
+      "account_attributed_commits": 50,
+      "tracked_files": 224,
+      "tracked_bytes": 4955534,
+      "detected_license": null,
+      "license_files": [],
+      "lfs_pointer_files": [],
+      "symlinks": [
+        "CLAUDE.md"
+      ],
+      "purpose": "Python analysis and slimming in Rust",
+      "selection_reason": "50 account-attributed commits; CLI/library code, Python integration, substantial test fixtures, and design documentation."
+    },
+    {
+      "name": "optillm-rs",
+      "path": "projects/optillm-rs",
+      "source_repository": "https://github.com/GeorgePearse/optillm-rs",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "78e540f3c4a909a39eaf3fe2e2a2fa99350c54f6",
+      "source_tree": "08601147cb7989782de8f5f30cb17531827d4465",
+      "source_commit_date": "2025-10-29T16:54:00Z",
+      "account_attributed_commits": 47,
+      "tracked_files": 373,
+      "tracked_bytes": 4554109,
+      "detected_license": null,
+      "license_files": [
+        "references/optillm/LICENSE"
+      ],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "LLM inference strategies in Rust",
+      "selection_reason": "47 account-attributed commits; multi-crate implementation, CLI, tests, benchmarks, and integration guides."
+    },
+    {
+      "name": "memetics",
+      "path": "projects/memetics",
+      "source_repository": "https://github.com/GeorgePearse/memetics",
+      "source_visibility": "public",
+      "source_branch": "feat/rust-rewrite",
+      "source_commit": "269e30854d1b056b6990d5ff8f538e7f85f4f938",
+      "source_tree": "2f2a2f435d5a418809c8adb8af4ec14ee1300e72",
+      "source_commit_date": "2026-10-06T19:39:45+00:00",
+      "source_pull_request": "https://github.com/GeorgePearse/memetics/pull/2",
+      "source_status": "open draft PR; not merged into default branch",
+      "account_attributed_commits": null,
+      "tracked_files": 32,
+      "tracked_bytes": 346967,
+      "detected_license": null,
+      "declared_package_license": "MIT",
+      "license_files": [],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Upstream implementation listeners and idea provenance",
+      "selection_reason": "Selected by George to replace LinearManager; Rust listeners, shared update processing, draft adaptation PRs, idea manifests, drift detection, and tests."
+    },
+    {
+      "name": "evaluator",
+      "path": "projects/evaluator",
+      "source_repository": "https://github.com/GeorgePearse/evaluator",
+      "source_visibility": "public",
+      "source_branch": "main",
+      "source_commit": "f9d2e8166f2b33b94104fc330c79ffd3302f0c39",
+      "source_tree": "b59615be43c80a44181c79ea605b16a685eb5889",
+      "source_commit_date": "2025-11-24T15:12:03Z",
+      "account_attributed_commits": 37,
+      "tracked_files": 61,
+      "tracked_bytes": 750898,
+      "detected_license": null,
+      "license_files": [],
+      "lfs_pointer_files": [],
+      "symlinks": [],
+      "purpose": "Coding-agent evaluation",
+      "selection_reason": "37 account-attributed commits; evaluation code, sandbox integration, tests, and documentation for agent and diff evaluation."
+    }
+  ]
+}

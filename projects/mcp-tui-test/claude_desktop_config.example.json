@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tui-test": {
+      "command": "uvx",
+      "args": [
+        "mcp-tui-test"
+      ]
+    }
+  }
+}

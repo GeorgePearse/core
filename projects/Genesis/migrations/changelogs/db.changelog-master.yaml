@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - include:
+      file: changelogs/001-evolution-runs.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/002-generations.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/003-individuals.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/004-pareto-fronts.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/005-code-lineages.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/006-llm-logs.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/007-agent-actions.sql
+      relativeToChangelogFile: false
+  - include:
+      file: changelogs/008-add-code-to-individuals.sql
+      relativeToChangelogFile: false

@@ -1,0 +1,492 @@
+# Getting Started with Genesis 🧬
+
+Genesis is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. This guide will help you get started with installing, configuring, and running your first evolutionary experiments.
+
+
+## Table of Contents
+
+1. [What is Genesis?](#what-is-genesis)
+2. [Installation](#installation)
+3. [Basic Usage](#basic-usage)
+4. [Examples](#examples)
+5. [Advanced Usage](#advanced-usage)
+6. [Troubleshooting](#troubleshooting)
+7. [Next Steps](#next-steps)
+
+## What is Genesis?
+
+Genesis enables automated exploration and improvement of scientific code by:
+
+- **Evolutionary Search**: Maintains a population of programs that evolve over generations
+- **LLM-Powered Mutations**: Uses LLMs as intelligent mutation operators to suggest code improvements
+- **Parallel Evaluation**: Supports parallel evaluation locally or in E2B cloud sandboxes
+- **Knowledge Transfer**: Maintains archives of successful solutions for cross-pollination between evolutionary islands
+- **Scientific Focus**: Optimized for tasks with verifiable correctness and performance metrics
+
+The framework is particularly well-suited for optimization problems, algorithm design, and scientific computing tasks where you can define clear evaluation criteria.
+
+## Installation
+
+### Prerequisites
+
+- Python 3.10+ (Python 3.11 recommended)
+- Git
+- Either uv (recommended) or conda/pip for environment management
+
+### Option 1: Using uv (Recommended - Faster) ⚡
+
+[uv](https://docs.astral.sh/uv/) is a modern, fast Python package installer and environment manager that's significantly faster than pip.
+
+#### Step 1: Install uv
+
+```bash
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or using pip
+pip install uv
+```
+
+#### Step 2: Clone and Install Genesis
+
+```bash
+git clone https://github.com/GeorgePearse/Genesis
+cd Genesis
+
+# Create virtual environment with Python 3.12
+uv venv --python 3.12
+
+# Activate the environment
+source .venv/bin/activate  # On macOS/Linux
+# .venv\Scripts\activate   # On Windows
+
+# Install Genesis in development mode
+uv pip install -e .
+```
+
+### Option 2: Using conda/pip (Traditional)
+
+#### Step 1: Create Environment
+
+```bash
+conda create -n genesis python=3.12
+conda activate genesis
+```
+
+#### Step 2: Clone and Install
+
+```bash
+git clone https://github.com/GeorgePearse/Genesis
+cd Genesis
+pip install -e .
+```
+
+### Step 3: Set Up Credentials
+
+Create a `.env` file in the project root with your API keys:
+
+```bash
+# .env file
+OPENAI_API_KEY=sk-proj-your-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here  # Optional
+CLICKHOUSE_URL=http://default:@localhost:8123/default  # Optional: For advanced logging
+```
+
+### Step 4: Verify Installation
+
+```bash
+# Test the CLI launcher
+genesis_launch --help
+
+# Test Python imports
+python -c "from genesis.core import EvolutionRunner; print('Installation successful!')"
+```
+
+
+### Advanced uv Features (Optional)
+
+If you're using uv, you can take advantage of additional features:
+
+#### Create a lockfile for reproducible environments:
+```bash
+# Generate uv.lock file
+uv pip compile pyproject.toml --output-file requirements.lock
+
+# Install from lockfile
+uv pip install -r requirements.lock
+```
+
+#### Install development dependencies:
+```bash
+# Install with dev dependencies (includes pytest, black, etc.)
+uv pip install -e ".[dev]"
+```
+
+#### Sync environment to exact specifications:
+```bash
+# Sync environment to match pyproject.toml exactly
+uv pip sync pyproject.toml
+```
+
+## Basic Usage
+
+### Quick Start with CLI
+
+The easiest way to get started is using the Hydra-based CLI launcher:
+
+```bash
+# Run circle packing example with default settings
+genesis_launch variant=circle_packing_example
+
+# Run with custom parameters
+genesis_launch \
+    task=circle_packing \
+    database=island_small \
+    evolution=small_budget \
+    cluster=local \
+    evo_config.num_generations=5
+```
+
+### Python API Usage
+
+For more control, you can use the Python API directly:
+
+```python
+from genesis.core import EvolutionRunner, EvolutionConfig
+from genesis.database import DatabaseConfig
+from genesis.launch import LocalJobConfig
+
+# Configure the job execution environment
+job_config = LocalJobConfig(
+    eval_program_path="examples/circle_packing/evaluate.py",
+    conda_env="my_special_env",  # Optional: run in specific conda environment
+)
+
+# Configure the evolution database
+db_config = DatabaseConfig(
+    archive_size=20,
+    num_archive_inspirations=4,
+    num_islands=2,
+    migration_interval=10,
+)
+
+# Configure the evolution parameters
+evo_config = EvolutionConfig(
+    num_generations=10,
+    max_parallel_jobs=1,
+    llm_models=["azure-gpt-4.1"],
+    init_program_path="examples/circle_packing/initial.py",
+    language="python",
+    task_sys_msg="You are optimizing circle packing...",
+)
+
+# Run the evolution
+runner = EvolutionRunner(
+    evo_config=evo_config,
+    job_config=job_config,
+    db_config=db_config,
+)
+runner.run()
+```
+
+For detailed configuration options and advanced settings, see the [Configuration Guide](configuration.md).
+
+## Examples
+
+### Circle Packing Example
+
+This example demonstrates optimizing the arrangement of 26 circles in a unit square to maximize the sum of their radii.
+
+#### Files Structure
+```
+examples/circle_packing/
+├── initial.py     # Starting solution
+├── evaluate.py    # Evaluation script
+└── run_evo.py     # Direct Python runner
+```
+
+#### Running the Example
+
+```bash
+# Using CLI launcher (recommended)
+genesis_launch variant=circle_packing_example
+
+# Or with custom settings
+genesis_launch \
+    task=circle_packing \
+    cluster=local \
+    evo_config.num_generations=20 \
+    db_config.num_islands=4
+
+# Or just via the python API
+python run_evo.py
+```
+
+#### Understanding the Initial Code Solution
+
+The `initial.py` contains the code that will be evolved:
+
+```python
+# EVOLVE-BLOCK-START
+def construct_packing():
+    """Construct arrangement of 26 circles in unit square"""
+    # This code will be modified by the LLM
+    n = 26
+    centers = np.zeros((n, 2))
+    # ... placement logic ...
+    return centers, radii
+# EVOLVE-BLOCK-END
+```
+
+The `EVOLVE-BLOCK-START/END` markers define which parts of the code can be modified during evolution.
+
+#### Understanding the Evaluation Script
+
+The `evaluate.py` script uses Genesis's `run_genesis_eval` function (from the `genesis.core` module) to test and score evolved solutions:
+
+```python
+from genesis.core import run_genesis_eval
+
+def main(program_path: str, results_dir: str):
+    """Main evaluation function called by Genesis"""
+    
+    metrics, correct, error_msg = run_genesis_eval(
+        program_path=program_path,
+        results_dir=results_dir,
+        experiment_fn_name="run_packing",        # Function to call in evolved code
+        num_runs=1,                              # Number of test runs
+        get_experiment_kwargs=get_kwargs_fn,     # Arguments for each run
+        validate_fn=validation_function,         # Validation logic
+        aggregate_metrics_fn=metrics_function,   # Metrics computation
+    )
+```
+
+**Key Components:**
+
+**1. Validation Function** - Checks if solutions meet constraints:
+```python
+def validate_packing(run_output):
+    """Returns (is_valid: bool, error_msg: str or None)"""
+    centers, radii, reported_sum = run_output
+    
+    # Check constraints (bounds, overlaps, etc.)
+    if constraint_violated:
+        return False, "Specific error description"
+    
+    return True, None  # Valid solution
+```
+
+**2. Metrics Aggregation Function** - Computes fitness and organizes results:
+```python
+def aggregate_metrics(results, results_dir):
+    """Returns metrics dictionary with required structure"""
+    
+    # Extract data from results
+    centers, radii, reported_sum = results[0]
+    
+    return {
+        "combined_score": float(reported_sum),    # PRIMARY FITNESS (higher = better)
+        "public": {                               # Visible in WebUI/logs
+            "num_circles": len(centers),
+            "centers_str": format_centers(centers)
+        },
+        "private": {                              # Internal analysis only
+            "reported_sum_of_radii": float(reported_sum),
+            "computation_time": 0.15
+        }
+    }
+```
+
+**What run_genesis_eval Returns:**
+
+The `run_genesis_eval` function returns three values:
+
+1. **`metrics` (dict)**: Structured performance data
+   - `combined_score`: Primary fitness value (higher = better)
+   - `public`: Metrics shown in WebUI and logs
+   - `private`: Internal metrics for analysis
+
+2. **`correct` (bool)**: Whether solution passed validation
+   - `True`: Solution is valid, can reproduce
+   - `False`: Solution failed, will be discarded
+
+3. **`error_msg` (str or None)**: Error description if validation failed
+
+**Public vs Private Metrics:**
+- **Public**: Displayed in WebUI, included in logs, used for monitoring
+- **Private**: Internal analysis, debugging, not shown in main interface
+
+
+
+### Other Available Examples
+
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| **Circle Packing** | Optimize circle arrangements | Geometric optimization |
+| **Agent Design** | Design AI agent scaffolds | Algorithm architecture |
+| **ALE-Bench** | Optimize competitive programming solutions | Code optimization |
+| **Novelty Generator** | Generate diverse creative outputs | Open-ended exploration |
+
+
+
+## Advanced Usage
+
+### E2B Cloud Sandboxes
+
+Genesis supports running evaluations in secure cloud sandboxes using E2B. This allows for massive parallelism and isolation.
+
+See the [E2B Integration Guide](e2b_integration.md) for setup and usage instructions.
+
+### Environment Management for Local Jobs
+
+When running jobs locally, you have several options for managing Python environments:
+
+#### Option 1: Use Current Environment (Default)
+```python
+job_config = LocalJobConfig(
+    eval_program_path="evaluate.py"
+)
+# Uses the currently active Python environment
+```
+
+#### Option 2: Use Specific Conda Environment
+```python
+job_config = LocalJobConfig(
+    eval_program_path="evaluate.py",
+    conda_env="my_project_env"  # Runs in specified conda environment
+)
+```
+
+This is particularly useful when:
+- Different experiments require different dependency versions
+- You want to isolate evaluation environments from your main development environment
+- Testing compatibility across multiple Python/package versions
+
+### Creating Custom Tasks
+
+1. **Define the Problem**: Create task config in `configs/task/my_task.yaml`
+2. **Initial Solution**: Write `initial.py` with `EVOLVE-BLOCK` markers
+3. **Evaluation Script**: Create `evaluate.py` with validation logic
+4. **Variant Config**: Combine settings in `configs/variant/my_variant.yaml`
+
+For a detailed walkthrough, see the [Creating Custom Tasks Guide](creating_tasks.md).
+
+For detailed configuration options, parameter explanations, and advanced patterns, see the [Configuration Guide](configuration.md).
+
+### Code Evolution Animation
+
+Generate animations showing how code evolves:
+
+```bash
+python code_path_anim.py --results_dir examples/circle_packing/results_20250101_120000
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**1. Import Errors**
+```bash
+# If using uv
+uv pip install -e .
+# If using pip
+pip install -e .
+# Check Python path
+python -c "import genesis; print(genesis.__file__)"
+```
+
+**2. API Key Issues**
+```bash
+# Verify .env file exists and contains valid keys
+cat .env
+# Check environment variables
+python -c "import os; print(os.getenv('OPENAI_API_KEY'))"
+```
+
+**3. Evaluation Failures**
+- Check that your evaluation script has correct function signatures
+- Verify the `EVOLVE-BLOCK` markers are properly placed
+- Ensure the evaluation function returns expected data types
+
+**4. Memory Issues**
+- Reduce `max_parallel_jobs` for local execution
+- Increase memory allocation for cluster jobs
+- Monitor database size and archive settings
+
+**5. uv-Specific Issues**
+```bash
+# Check uv version
+uv --version
+
+# Verify virtual environment is activated
+which python  # Should point to .venv/bin/python
+
+# Reset environment if needed
+rm -rf .venv
+uv venv --python 3.11
+source .venv/bin/activate
+uv pip install -e .
+
+# Check uv cache if having dependency issues
+uv cache clean
+```
+
+**6. Conda Environment Issues (Local Jobs)**
+```bash
+# Verify conda environment exists
+conda env list
+
+# Test conda environment works
+conda run -n my_env python --version
+
+# Check if required packages are installed in target environment
+conda run -n my_env python -c "import genesis; print('OK')"
+
+# Install genesis in specific conda environment
+conda activate my_env
+pip install -e .
+conda deactivate
+```
+
+### Debug Mode
+
+Enable verbose logging:
+```bash
+genesis_launch variant=my_variant verbose=true
+```
+
+### Getting Help
+
+- Check the [examples](https://github.com/GeorgePearse/Genesis/tree/main/examples/) directory for reference implementations
+- See the [Configuration Guide](configuration.md) for detailed parameter explanations
+- Examine the generated experiment logs in the results directory
+
+### Advanced Debugging & Logging
+
+For deep analysis of evolutionary runs, enabling comprehensive logging is essential. Future versions of Genesis will include a robust search engine (e.g., vector database, elasticsearch) to trace LLM reasoning chains and allow you to search through the entire history of "what the LLMs were actually thinking" across all generations.
+
+### Meta-Strategy Experimentation
+
+We are working on features to allow automated experimentation across entirely different evolutionary strategies (not just parameter tuning). This will enable users to compare approaches like standard Island Models, MAP-Elites, and FunSearch-style evolution to find the best fit for their specific domain.
+
+## Next Steps
+
+Now that you have Genesis running:
+
+1. **Try the Examples**: Run the circle packing example to see evolution in action
+2. **Explore the WebUI**: See the [WebUI Guide](webui.md) to visualize how solutions evolve
+3. **Create Custom Tasks**: Adapt the framework to your specific optimization problems
+4. **Scale Up**: Deploy on clusters for large-scale evolutionary experiments
+5. **Optimize Model Selection**: Use the dynamic selection feature (`llm_dynamic_selection=ucb`) which treats picking the best LLM as a multi-armed bandit sampling problem (specifically Asymmetric UCB), automatically converging on the most effective models for your task. Other strategies like `Thompson Sampling` or `Exp3` could also be implemented for different exploration-exploitation trade-offs.
+6. **Maximized Code View**: In the WebUI, clicking on a program now opens a maximized code view for better readability. This allows you to focus entirely on the evolved solution.
+
+### Future Development
+
+We are actively working on improving the local development experience:
+- **Terminal UI**: A rich terminal dashboard to monitor evolution without a browser.
+- **Unified Launcher**: Single command to launch evolution and UI together.
+
+Happy evolving! 🧬

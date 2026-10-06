@@ -1,0 +1,29 @@
+[package]
+name = "simple-copy-paste"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance copy-paste augmentation for object detection and instance segmentation"
+
+[lib]
+name = "copy_paste"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+ndarray = "0.16"
+image = "0.25"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+rayon = "1.10"
+
+[dev-dependencies]
+imageproc = "0.25"
+rstest = "0.22"
+proptest = "1.4"
+insta = { version = "1.40", features = ["yaml"] }
+
+[profile.release]
+opt-level = 3
+lto = true

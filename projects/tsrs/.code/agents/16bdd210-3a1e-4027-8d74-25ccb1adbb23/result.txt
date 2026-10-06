@@ -1,0 +1,29 @@
+Design document complete! I've created a comprehensive specification at `/home/georgepearse/tsrs/MINIFY_DESIGN.md` covering:
+
+## Key Components
+
+**Data Structures**:
+- `FunctionPlan`: Tracks original names, rename mappings, and exclusions per function
+- `MinifyPlan`: Top-level container with stable function ordering
+- Both fully serde-serializable
+
+**Short Name Generator**:
+- Simple sequential: a→z, aa→zz, aaa→zzz...
+- Skips Python's 35 keywords automatically
+- Deterministic and collision-free
+
+**AST Binding Coverage**:
+1. Parameters (positional, keyword, *args, **kwargs)
+2. Assign/AnnAssign/AugAssign targets
+3. For/AsyncFor targets
+4. With/AsyncWith optional_vars
+5. ExceptHandler names
+6. Import/ImportFrom aliases
+
+**Scope Rules**:
+- Excludes class scope (separate handling needed)
+- Respects global/nonlocal declarations
+- Filters dunder names, single underscores, keywords
+- Stable source-order function collection
+
+The design is implementation-ready with code snippets for all major components and handles edge cases like nested unpacking, walrus operators, and match patterns.

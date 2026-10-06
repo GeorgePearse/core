@@ -1,0 +1,90 @@
+.llm-result-panel {
+  padding: 10px;
+}
+
+.llm-result-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+
+.llm-result-panel h4 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+}
+
+.llm-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.llm-result-table th,
+.llm-result-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.llm-result-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  width: 150px;
+}
+
+.llm-section {
+  margin-bottom: 15px;
+}
+
+.llm-details {
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+}
+
+.llm-details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 15px;
+  font-weight: 500;
+  color: #0366d6;
+  background: #f6f8fa;
+  border-radius: 4px 4px 0 0;
+}
+
+.llm-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.llm-summary::before {
+  content: '▶';
+  display: inline-block;
+  font-size: 0.8em;
+  margin-right: 8px;
+  transition: transform 0.2s;
+}
+
+.llm-details[open] > .llm-summary::before {
+  transform: rotate(90deg);
+}
+
+.llm-details[open] > summary {
+  border-radius: 4px 4px 0 0;
+}
+
+.llm-content {
+  padding: 15px;
+  background: #fff;
+}
+
+.llm-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 400px;
+  overflow-y: auto;
+}

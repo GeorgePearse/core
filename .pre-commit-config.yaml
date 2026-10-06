@@ -1,3 +1,6 @@
+# Preserve imported snapshots; each project retains its own quality tooling.
+exclude: ^projects/[^/]+/
+
 repos:
   - repo: local
     hooks:

@@ -1,0 +1,29 @@
+repos:
+  # Python code formatting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Documentation link validation
+  - repo: local
+    hooks:
+      - id: check-doc-links
+        name: Check documentation links
+        entry: python scripts/check_doc_links.py
+        language: python
+        files: ^docs/.*\.md$
+        pass_filenames: false
+        stages: [commit]
+
+      # Type checking with ty (Rust-based type checker from Astral)
+      # Note: ty is in alpha but very fast - available via `uvx ty check src/ tests/`
+      - id: ty-check
+        name: ty type checking
+        entry: uvx ty check
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [commit]

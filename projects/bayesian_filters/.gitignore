@@ -1,0 +1,33 @@
+*.pyc
+*.tex
+*.toc
+*.aux
+*.out
+book_files/
+dist/
+*egg-info*
+_build/
+_static
+_templatesq
+quadrature.py
+.settings/
+.cache/
+win-32/
+win-64/
+linux-32/
+linux-64/
+osx-64/
+filterpy/kalman/i.py
+filterpy/inprogress.py
+bayesian_filters/kalman/i.py
+bayesian_filters/inprogress.py
+.pytest_cache
+
+# uv
+.venv/
+uv.lock
+.python-version
+
+# Issue import tracking
+imported-issues.json
+/site/

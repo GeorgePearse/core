@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evaluator"
+version = "0.1.0"
+description = "AI coding task evaluator using E2B sandboxes and LLM judges"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "George Pearse" }]
+
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "pytest>=7.0",
+    "anthropic>=0.18.0",
+    "pydantic-core>=2.0",
+    "tqdm>=4.60",
+    "sqlalchemy>=2.0",
+    "jinja2>=3.1",
+    "click>=8.0",
+    "jsonschema>=4.0",
+]
+
+[project.scripts]
+evaluator = "evaluator.cli:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-xdist>=3.0",
+    "pytest-timeout>=2.0",
+    "ruff>=0.8.0",
+    "ty>=0.0.0a7",
+    "mypy>=1.0",
+    "black>=23.0",
+    "isort>=5.12",
+]
+
+lint = [
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "black>=23.0",
+    "isort>=5.12",
+]
+
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.20.0",
+]
+
+e2b = [
+    "e2b-code-interpreter>=1.0.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["src", "tests"]
+python_files = ["test_*.py", "*_test.py"]
+plugins = ["evaluator.pytest_plugin"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "yaml.*"
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.isort]
+profile = "black"
+line_length = 100

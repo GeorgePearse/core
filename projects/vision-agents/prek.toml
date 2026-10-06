@@ -1,0 +1,20 @@
+minimum_prek_version = "0.3.8"
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "ty"
+name = "ty"
+language = "system"
+entry = "uv run ty check"
+files = "^(agentic_vision|viewer_api|scripts|tests)/|^pyproject\\.toml$"
+pass_filenames = false
+
+[[repos.hooks]]
+id = "oxlint"
+name = "oxlint"
+language = "system"
+entry = "npm --prefix frontend/agentic-vision-viewer run oxlint"
+files = "^frontend/agentic-vision-viewer/"
+pass_filenames = false

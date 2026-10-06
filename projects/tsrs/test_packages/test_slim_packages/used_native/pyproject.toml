@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "used-native"
+version = "0.1.0"
+description = "Package bundling a native shared library"
+requires-python = ">=3.8"

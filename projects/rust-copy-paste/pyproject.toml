@@ -1,0 +1,58 @@
+[project]
+name = "simple-copy-paste"
+version = "0.1.0"
+description = "High-performance copy-paste augmentation for object detection and instance segmentation with per-class control"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "George Pearse", email = "george@example.com"}
+]
+license = {text = "MIT"}
+keywords = ["augmentation", "copy-paste", "object-detection", "instance-segmentation", "albumentations"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+dependencies = [
+    "numpy>=2.0.0",
+    "albumentations>=1.4.0",
+    "opencv-python-headless>=4.8.0",
+    "pycocotools>=2.0.0",
+    "loguru>=0.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/simple-copy-paste"
+Documentation = "https://yourusername.github.io/simple-copy-paste"
+Repository = "https://github.com/yourusername/simple-copy-paste"
+Issues = "https://github.com/yourusername/simple-copy-paste/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-benchmark>=5.0.0",
+    "psutil>=5.9.0",
+]
+benchmarks = [
+    "pytest-benchmark>=5.0.0",
+    "psutil>=5.9.0",
+    "torch>=2.0.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "torchvision>=0.15.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
+]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+module-name = "copy_paste._core"

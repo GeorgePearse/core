@@ -1,0 +1,146 @@
+name: Visualize Pipeline
+
+# This workflow generates visual outputs for every PR to help review augmentation changes
+on:
+  pull_request:
+    branches: [master, main, develop]
+  pull_request_target:
+    branches: [master, main, develop]
+  push:
+    branches: [master, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  visualize-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install uv and maturin
+        run: |
+          pip install uv maturin
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv sync
+
+      - name: Build Rust extension with Maturin
+        run: |
+          source .venv/bin/activate
+          maturin develop
+
+      - name: Install additional dependencies
+        run: |
+          source .venv/bin/activate
+          pip install opencv-python-headless
+
+      - name: Generate pipeline visualizations
+        run: |
+          source .venv/bin/activate
+          python examples/visualize_pipeline.py \
+            --output-dir examples/visual_outputs/pipeline_stages \
+            --class-counts person:2,car:1 \
+            --image-width 512 \
+            --image-height 512
+
+      - name: Upload visualization outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-visualizations
+          path: examples/visual_outputs/pipeline_stages/
+          retention-days: 30
+
+      - name: Generate visualization report
+        if: always()
+        run: |
+          echo "## Pipeline Visualization Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Visualization pipeline executed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Generated Visualizations" >> $GITHUB_STEP_SUMMARY
+          if [ -d "examples/visual_outputs/pipeline_stages" ]; then
+            count=$(ls -1 examples/visual_outputs/pipeline_stages/*.jpg 2>/dev/null | wc -l)
+            echo "- Generated $count visualization images" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Files:**" >> $GITHUB_STEP_SUMMARY
+            ls -1 examples/visual_outputs/pipeline_stages/*.jpg 2>/dev/null | while read f; do
+              echo "- $(basename $f)" >> $GITHUB_STEP_SUMMARY
+            done
+          fi
+
+      - name: Create PR comment with visualization summary
+        if: (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && always()
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const visualDir = 'examples/visual_outputs/pipeline_stages';
+            let comment = '## 📊 Copy-Paste Augmentation Pipeline Visualization\n\n';
+
+            if (fs.existsSync(visualDir)) {
+              const allFiles = fs.readdirSync(visualDir).filter(f => f.endsWith('.jpg')).sort();
+
+              if (allFiles.length > 0) {
+                comment += '✅ **Visualization pipeline executed successfully!**\n\n';
+                comment += '### Generated Outputs\n\n';
+                comment += 'The following visualization images have been generated:\n\n';
+
+                // Describe each type of visualization
+                const descriptions = {
+                  'input_with_bboxes': 'Input image with original object bounding boxes and labels',
+                  'augmented_with_bboxes': 'Augmented image showing pasted objects with labels',
+                  'comparison': 'Side-by-side comparison of input vs augmented image'
+                };
+
+                for (const [key, description] of Object.entries(descriptions)) {
+                  const file = allFiles.find(f => f.includes(key));
+                  if (file) {
+                    comment += `- **${key.replace(/_/g, ' ')}**: ${description}\n`;
+                  }
+                }
+
+                comment += '\n### Download Artifacts\n\n';
+                comment += `All visualization images are available as artifacts in the [GitHub Actions run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for 30 days.\n\n`;
+                comment += 'To view the images:\n';
+                comment += '1. Go to the "Visualize Pipeline" job in the Actions tab\n';
+                comment += '2. Scroll to the "Artifacts" section\n';
+                comment += '3. Download the "pipeline-visualizations" artifact\n\n';
+
+                comment += '### File List\n\n';
+                const fileList = allFiles.map(f => `- ${f}`).join('\n');
+                comment += fileList + '\n';
+              } else {
+                comment += '⚠️ **No visualization images were generated.**\n';
+              }
+            } else {
+              comment += '⚠️ **No visualization outputs directory found.**\n';
+            }
+
+            try {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              console.log('PR comment created successfully');
+            } catch (error) {
+              console.log(`Failed to create comment: ${error.message}`);
+            }

@@ -1,0 +1,4 @@
+/target
+.memetics/
+.env
+.memetics-rust-*.md

@@ -1,0 +1,1009 @@
+{
+  "timestamp": "1763409789.9069927",
+  "num_processed": 27,
+  "variants_per_image": 3,
+  "images": [
+    {
+      "original": "triangle_000.png",
+      "augmented": "augmented_000_v0.png",
+      "mask": "augmented_000_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 116372,
+      "objects": [
+        {
+          "x_min": 0.7294957637786865,
+          "y_min": 0.725468099117279,
+          "x_max": 0.9873082637786865,
+          "y_max": 0.983280599117279,
+          "class_id": 255,
+          "rotation_deg": 111.88555908203125,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.43070024251937866,
+          "y_min": 0.5728984475135803,
+          "x_max": 0.8037471175193787,
+          "y_max": 0.9459453225135803,
+          "class_id": 255,
+          "rotation_deg": 113.836669921875,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "triangle_000.png",
+      "augmented": "augmented_000_v1.png",
+      "mask": "augmented_000_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 101265,
+      "objects": [
+        {
+          "x_min": 0.16510532796382904,
+          "y_min": 0.07776986062526703,
+          "x_max": 0.5264334678649902,
+          "y_max": 0.3902698755264282,
+          "class_id": 255,
+          "rotation_deg": -121.82211303710938,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.010102197527885437,
+          "y_min": 0.6274411678314209,
+          "x_max": 0.34213346242904663,
+          "y_max": 1.0,
+          "class_id": 255,
+          "rotation_deg": 165.16510009765625,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.3308027684688568,
+          "y_min": 0.41092368960380554,
+          "x_max": 0.7331465482711792,
+          "y_max": 0.7527205944061279,
+          "class_id": 255,
+          "rotation_deg": 121.6063232421875,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "triangle_000.png",
+      "augmented": "augmented_000_v2.png",
+      "mask": "augmented_000_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 129757,
+      "objects": [
+        {
+          "x_min": 0.009350508451461792,
+          "y_min": 0.651591420173645,
+          "x_max": 0.3042723834514618,
+          "y_max": 0.946513295173645,
+          "class_id": 255,
+          "rotation_deg": 9.662277221679688,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.4018792510032654,
+          "y_min": 0.7126340270042419,
+          "x_max": 0.6460198760032654,
+          "y_max": 0.9567746520042419,
+          "class_id": 255,
+          "rotation_deg": -156.68743896484375,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.0,
+          "y_min": 0.5311354994773865,
+          "x_max": 0.40234375,
+          "y_max": 0.9627761244773865,
+          "class_id": 255,
+          "rotation_deg": 131.70455932617188,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "triangle_001.png",
+      "augmented": "augmented_001_v0.png",
+      "mask": "augmented_001_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 139767,
+      "objects": [
+        {
+          "x_min": 0.04587520658969879,
+          "y_min": 0.16619287431240082,
+          "x_max": 0.5068126916885376,
+          "y_max": 0.627130389213562,
+          "class_id": 255,
+          "rotation_deg": 159.55828857421875,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.18428657948970795,
+          "y_min": 0.38151150941848755,
+          "x_max": 0.5651459693908691,
+          "y_max": 0.7037771344184875,
+          "class_id": 255,
+          "rotation_deg": -120.26809692382812,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.1783834844827652,
+          "y_min": 0.6260814666748047,
+          "x_max": 0.447914719581604,
+          "y_max": 0.8936595916748047,
+          "class_id": 255,
+          "rotation_deg": -15.797210693359375,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "triangle_001.png",
+      "augmented": "augmented_001_v1.png",
+      "mask": "augmented_001_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 122036,
+      "objects": [
+        {
+          "x_min": 0.06210142374038696,
+          "y_min": 0.46345362067222595,
+          "x_max": 0.49569517374038696,
+          "y_max": 0.8970474004745483,
+          "class_id": 255,
+          "rotation_deg": -14.210540771484375,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.2233835756778717,
+          "y_min": 0.4293993413448334,
+          "x_max": 0.6784616708755493,
+          "y_max": 0.8844774961471558,
+          "class_id": 255,
+          "rotation_deg": 39.490509033203125,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "triangle_001.png",
+      "augmented": "augmented_001_v2.png",
+      "mask": "augmented_001_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 134349,
+      "objects": [
+        {
+          "x_min": 0.1588463932275772,
+          "y_min": 0.20966903865337372,
+          "x_max": 0.483065128326416,
+          "y_max": 0.5338878035545349,
+          "class_id": 255,
+          "rotation_deg": -157.51773071289062,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.3107803761959076,
+          "y_min": 0.4620596766471863,
+          "x_max": 0.63890540599823,
+          "y_max": 0.7901846766471863,
+          "class_id": 255,
+          "rotation_deg": -118.33330535888672,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.48675230145454407,
+          "y_min": 0.18692997097969055,
+          "x_max": 0.8168303966522217,
+          "y_max": 0.5170080661773682,
+          "class_id": 255,
+          "rotation_deg": 81.75100708007812,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "triangle_002.png",
+      "augmented": "augmented_002_v0.png",
+      "mask": "augmented_002_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 134439,
+      "objects": [
+        {
+          "x_min": 0.6160154938697815,
+          "y_min": 0.5768149495124817,
+          "x_max": 1.0,
+          "y_max": 0.9830649495124817,
+          "class_id": 255,
+          "rotation_deg": -13.779586791992188,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.5698370933532715,
+          "y_min": 0.1952347755432129,
+          "x_max": 0.9233527183532715,
+          "y_max": 0.5135941505432129,
+          "class_id": 255,
+          "rotation_deg": -125.72303009033203,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "triangle_002.png",
+      "augmented": "augmented_002_v1.png",
+      "mask": "augmented_002_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 103361,
+      "objects": [
+        {
+          "x_min": 0.01215970516204834,
+          "y_min": 0.5392496585845947,
+          "x_max": 0.41645658016204834,
+          "y_max": 0.8947184085845947,
+          "class_id": 255,
+          "rotation_deg": 124.21356201171875,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.10984790325164795,
+          "y_min": 0.37705737352371216,
+          "x_max": 0.43992602825164795,
+          "y_max": 0.7071354985237122,
+          "class_id": 255,
+          "rotation_deg": -107.76596069335938,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "triangle_002.png",
+      "augmented": "augmented_002_v2.png",
+      "mask": "augmented_002_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 92035,
+      "objects": [
+        {
+          "x_min": 0.11238270998001099,
+          "y_min": 0.4998352527618408,
+          "x_max": 0.366288959980011,
+          "y_max": 0.7556946277618408,
+          "class_id": 255,
+          "rotation_deg": -171.64141845703125,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.30708447098731995,
+          "y_min": 0.12521257996559143,
+          "x_max": 0.6176313161849976,
+          "y_max": 0.43380632996559143,
+          "class_id": 255,
+          "rotation_deg": -159.03147888183594,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "circle_000.png",
+      "augmented": "augmented_003_v0.png",
+      "mask": "augmented_003_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 103314,
+      "objects": [
+        {
+          "x_min": 0.0,
+          "y_min": 0.04125851392745972,
+          "x_max": 0.400390625,
+          "y_max": 0.3967272639274597,
+          "class_id": 255,
+          "rotation_deg": 108.97698974609375,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.7045392394065857,
+          "y_min": 0.6081334948539734,
+          "x_max": 0.9643048644065857,
+          "y_max": 0.8678991198539734,
+          "class_id": 255,
+          "rotation_deg": -15.423294067382812,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "circle_000.png",
+      "augmented": "augmented_003_v1.png",
+      "mask": "augmented_003_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 94967,
+      "objects": [
+        {
+          "x_min": 0.3855880796909332,
+          "y_min": 0.19877371191978455,
+          "x_max": 0.7156661748886108,
+          "y_max": 0.47807058691978455,
+          "class_id": 255,
+          "rotation_deg": 121.2413330078125,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.0,
+          "y_min": 0.07001805305480957,
+          "x_max": 0.369140625,
+          "y_max": 0.47822117805480957,
+          "class_id": 255,
+          "rotation_deg": 140.19696044921875,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.024822339415550232,
+          "y_min": 0.00531141459941864,
+          "x_max": 0.3802911043167114,
+          "y_max": 0.36273330450057983,
+          "class_id": 255,
+          "rotation_deg": 135.84567260742188,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "circle_000.png",
+      "augmented": "augmented_003_v2.png",
+      "mask": "augmented_003_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 125312,
+      "objects": [
+        {
+          "x_min": 0.4571951627731323,
+          "y_min": 0.14918404817581177,
+          "x_max": 0.7638357877731323,
+          "y_max": 0.5105121731758118,
+          "class_id": 255,
+          "rotation_deg": 18.898178100585938,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.33635297417640686,
+          "y_min": 0.6927427053451538,
+          "x_max": 0.7543216943740845,
+          "y_max": 0.9993833303451538,
+          "class_id": 255,
+          "rotation_deg": -52.58656311035156,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.2887927293777466,
+          "y_min": 0.6160836219787598,
+          "x_max": 0.6032458543777466,
+          "y_max": 0.9305367469787598,
+          "class_id": 255,
+          "rotation_deg": -170.67071533203125,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "circle_001.png",
+      "augmented": "augmented_004_v0.png",
+      "mask": "augmented_004_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 142181,
+      "objects": [
+        {
+          "x_min": 0.22792398929595947,
+          "y_min": 0.5347633361816406,
+          "x_max": 0.7337833642959595,
+          "y_max": 0.9996070861816406,
+          "class_id": 255,
+          "rotation_deg": -53.99629211425781,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.12965147197246552,
+          "y_min": 0.5108189582824707,
+          "x_max": 0.4480108618736267,
+          "y_max": 0.8291783332824707,
+          "class_id": 255,
+          "rotation_deg": -4.7793426513671875,
+          "source_image": "circle_000.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.08984512090682983,
+          "y_min": 0.41311585903167725,
+          "x_max": 0.37109512090682983,
+          "y_max": 0.7060846090316772,
+          "class_id": 255,
+          "rotation_deg": -5.0184173583984375,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "circle_001.png",
+      "augmented": "augmented_004_v1.png",
+      "mask": "augmented_004_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 119981,
+      "objects": [
+        {
+          "x_min": 0.19344016909599304,
+          "y_min": 0.6898854970932007,
+          "x_max": 0.6270339488983154,
+          "y_max": 1.0,
+          "class_id": 255,
+          "rotation_deg": 66.35281372070312,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.2951045632362366,
+          "y_min": 0.17759983241558075,
+          "x_max": 0.7814326882362366,
+          "y_max": 0.6639279723167419,
+          "class_id": 255,
+          "rotation_deg": 116.18341064453125,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "circle_001.png",
+      "augmented": "augmented_004_v2.png",
+      "mask": "augmented_004_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 108825,
+      "objects": [
+        {
+          "x_min": 0.34306883811950684,
+          "y_min": 0.47280511260032654,
+          "x_max": 0.6028344631195068,
+          "y_max": 0.7325707674026489,
+          "class_id": 255,
+          "rotation_deg": 1.987640380859375,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.07062782347202301,
+          "y_min": 0.27989357709884644,
+          "x_max": 0.3577371835708618,
+          "y_max": 0.5670029520988464,
+          "class_id": 255,
+          "rotation_deg": 11.84112548828125,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.5128758549690247,
+          "y_min": 0.5439523458480835,
+          "x_max": 0.8722508549690247,
+          "y_max": 0.9384835958480835,
+          "class_id": 255,
+          "rotation_deg": -168.47967529296875,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "circle_002.png",
+      "augmented": "augmented_005_v0.png",
+      "mask": "augmented_005_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 132704,
+      "objects": [
+        {
+          "x_min": 0.39566770195961,
+          "y_min": 0.049205392599105835,
+          "x_max": 0.7999645471572876,
+          "y_max": 0.45350226759910583,
+          "class_id": 255,
+          "rotation_deg": 13.809921264648438,
+          "source_image": "square_000.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.44987595081329346,
+          "y_min": 0.0,
+          "x_max": 0.9049540758132935,
+          "y_max": 0.41015625,
+          "class_id": 255,
+          "rotation_deg": 103.46261596679688,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "circle_002.png",
+      "augmented": "augmented_005_v1.png",
+      "mask": "augmented_005_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 144869,
+      "objects": [
+        {
+          "x_min": 0.09000338613986969,
+          "y_min": 0.6019395589828491,
+          "x_max": 0.3751596212387085,
+          "y_max": 0.8870958089828491,
+          "class_id": 255,
+          "rotation_deg": -54.39257049560547,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.4344836473464966,
+          "y_min": 0.04771171510219574,
+          "x_max": 0.7723742723464966,
+          "y_max": 0.38560235500335693,
+          "class_id": 255,
+          "rotation_deg": -48.9678955078125,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.6304951906204224,
+          "y_min": 0.08487032353878021,
+          "x_max": 0.9801045656204224,
+          "y_max": 0.4481515884399414,
+          "class_id": 255,
+          "rotation_deg": -4.611114501953125,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "circle_002.png",
+      "augmented": "augmented_005_v2.png",
+      "mask": "augmented_005_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 151241,
+      "objects": [
+        {
+          "x_min": 0.08010326325893402,
+          "y_min": 0.48812901973724365,
+          "x_max": 0.4238532781600952,
+          "y_max": 0.8318790197372437,
+          "class_id": 255,
+          "rotation_deg": 178.46774291992188,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.230405792593956,
+          "y_min": 0.2565927505493164,
+          "x_max": 0.5565776824951172,
+          "y_max": 0.5827646255493164,
+          "class_id": 255,
+          "rotation_deg": 179.06503295898438,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.3572680354118347,
+          "y_min": 0.41533875465393066,
+          "x_max": 0.7771899104118347,
+          "y_max": 0.8352606296539307,
+          "class_id": 255,
+          "rotation_deg": -15.196273803710938,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "square_000.png",
+      "augmented": "augmented_006_v0.png",
+      "mask": "augmented_006_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 125016,
+      "objects": [
+        {
+          "x_min": 0.3321409225463867,
+          "y_min": 0.2684483826160431,
+          "x_max": 0.6797971725463867,
+          "y_max": 0.6141514778137207,
+          "class_id": 255,
+          "rotation_deg": -68.17127227783203,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.5227234363555908,
+          "y_min": 0.0,
+          "x_max": 0.8625671863555908,
+          "y_max": 0.333984375,
+          "class_id": 255,
+          "rotation_deg": -16.547836303710938,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.359330415725708,
+          "y_min": 0.5834527015686035,
+          "x_max": 0.677689790725708,
+          "y_max": 0.8666558265686035,
+          "class_id": 255,
+          "rotation_deg": -124.03598022460938,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "square_000.png",
+      "augmented": "augmented_006_v1.png",
+      "mask": "augmented_006_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 113948,
+      "objects": [
+        {
+          "x_min": 0.17459125816822052,
+          "y_min": 0.21400274336338043,
+          "x_max": 0.4460756182670593,
+          "y_max": 0.48548710346221924,
+          "class_id": 255,
+          "rotation_deg": 90.09588623046875,
+          "source_image": "square_000.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.06088852882385254,
+          "y_min": 0.2713914215564728,
+          "x_max": 0.38901352882385254,
+          "y_max": 0.6756882667541504,
+          "class_id": 255,
+          "rotation_deg": 27.807235717773438,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.016721636056900024,
+          "y_min": 0.25035303831100464,
+          "x_max": 0.3116435110569,
+          "y_max": 0.5452749133110046,
+          "class_id": 255,
+          "rotation_deg": 33.06504821777344,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "square_000.png",
+      "augmented": "augmented_006_v2.png",
+      "mask": "augmented_006_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 119854,
+      "objects": [
+        {
+          "x_min": 0.28450191020965576,
+          "y_min": 0.462962806224823,
+          "x_max": 0.6868456602096558,
+          "y_max": 0.865306556224823,
+          "class_id": 255,
+          "rotation_deg": -170.28958129882812,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.2729353904724121,
+          "y_min": 0.1627877652645111,
+          "x_max": 0.7377791404724121,
+          "y_max": 0.6276315450668335,
+          "class_id": 255,
+          "rotation_deg": -108.56559753417969,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    },
+    {
+      "original": "square_001.png",
+      "augmented": "augmented_007_v0.png",
+      "mask": "augmented_007_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 135816,
+      "objects": [
+        {
+          "x_min": 0.5619389414787292,
+          "y_min": 0.3310006856918335,
+          "x_max": 0.9603764414787292,
+          "y_max": 0.7294381856918335,
+          "class_id": 255,
+          "rotation_deg": -123.05811309814453,
+          "source_image": "square_000.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.30125516653060913,
+          "y_min": 0.0021844804286956787,
+          "x_max": 0.6782082915306091,
+          "y_max": 0.3283563554286957,
+          "class_id": 255,
+          "rotation_deg": 122.59710693359375,
+          "source_image": "triangle_000.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.6743209362030029,
+          "y_min": 0.5692323446273804,
+          "x_max": 0.9731490612030029,
+          "y_max": 0.8348573446273804,
+          "class_id": 255,
+          "rotation_deg": 103.65274047851562,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "square_001.png",
+      "augmented": "augmented_007_v1.png",
+      "mask": "augmented_007_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 86410,
+      "objects": [
+        {
+          "x_min": 0.3316940665245056,
+          "y_min": 0.2217184454202652,
+          "x_max": 0.6090378165245056,
+          "y_max": 0.499062180519104,
+          "class_id": 255,
+          "rotation_deg": 59.66325378417969,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.3792562484741211,
+          "y_min": 0.6097750663757324,
+          "x_max": 0.6253499984741211,
+          "y_max": 0.8558688163757324,
+          "class_id": 255,
+          "rotation_deg": -151.76470947265625,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.30937960743904114,
+          "y_min": 0.46192666888237,
+          "x_max": 0.7156295776367188,
+          "y_max": 0.8408329486846924,
+          "class_id": 255,
+          "rotation_deg": 129.68264770507812,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "square_001.png",
+      "augmented": "augmented_007_v2.png",
+      "mask": "augmented_007_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 90828,
+      "objects": [
+        {
+          "x_min": 0.3037683963775635,
+          "y_min": 0.10981146991252899,
+          "x_max": 0.6201746463775635,
+          "y_max": 0.4965302348136902,
+          "class_id": 255,
+          "rotation_deg": 152.9461669921875,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.5062222480773926,
+          "y_min": 0.27890023589134216,
+          "x_max": 0.8734097480773926,
+          "y_max": 0.6851502656936646,
+          "class_id": 255,
+          "rotation_deg": 144.50155639648438,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "square_002.png",
+      "augmented": "augmented_008_v0.png",
+      "mask": "augmented_008_v0_mask.png",
+      "variant": 0,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 93454,
+      "objects": [
+        {
+          "x_min": 0.10013027489185333,
+          "y_min": 0.48850029706954956,
+          "x_max": 0.5005208849906921,
+          "y_max": 0.8302971720695496,
+          "class_id": 255,
+          "rotation_deg": -58.10161590576172,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.570945143699646,
+          "y_min": 0.11948880553245544,
+          "x_max": 0.996726393699646,
+          "y_max": 0.46323880553245544,
+          "class_id": 255,
+          "rotation_deg": 115.44747924804688,
+          "source_image": "triangle_002.png",
+          "class_name": "triangle"
+        }
+      ]
+    },
+    {
+      "original": "square_002.png",
+      "augmented": "augmented_008_v1.png",
+      "mask": "augmented_008_v1_mask.png",
+      "variant": 1,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 149781,
+      "objects": [
+        {
+          "x_min": 0.5346139073371887,
+          "y_min": 0.6161518692970276,
+          "x_max": 0.7963326573371887,
+          "y_max": 0.8778706192970276,
+          "class_id": 255,
+          "rotation_deg": 6.4016571044921875,
+          "source_image": "circle_001.png",
+          "class_name": "circle"
+        },
+        {
+          "x_min": 0.14532263576984406,
+          "y_min": 0.5978734493255615,
+          "x_max": 0.5242288708686829,
+          "y_max": 0.9767796993255615,
+          "class_id": 255,
+          "rotation_deg": -68.83504486083984,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.09630343317985535,
+          "y_min": 0.4418219029903412,
+          "x_max": 0.43614718317985535,
+          "y_max": 0.7816656827926636,
+          "class_id": 255,
+          "rotation_deg": -99.71465301513672,
+          "source_image": "circle_002.png",
+          "class_name": "circle"
+        }
+      ]
+    },
+    {
+      "original": "square_002.png",
+      "augmented": "augmented_008_v2.png",
+      "mask": "augmented_008_v2_mask.png",
+      "variant": 2,
+      "width": 512,
+      "height": 512,
+      "changed_pixels": 173122,
+      "objects": [
+        {
+          "x_min": 0.14160777628421783,
+          "y_min": 0.4110434651374817,
+          "x_max": 0.5830140113830566,
+          "y_max": 0.8524497151374817,
+          "class_id": 255,
+          "rotation_deg": 156.9189453125,
+          "source_image": "square_001.png",
+          "class_name": "square"
+        },
+        {
+          "x_min": 0.5541508793830872,
+          "y_min": 0.6262531280517578,
+          "x_max": 0.8178227543830872,
+          "y_max": 0.9426593780517578,
+          "class_id": 255,
+          "rotation_deg": 150.9639892578125,
+          "source_image": "triangle_001.png",
+          "class_name": "triangle"
+        },
+        {
+          "x_min": 0.5864018797874451,
+          "y_min": 0.037746086716651917,
+          "x_max": 1.0,
+          "y_max": 0.4713398218154907,
+          "class_id": 255,
+          "rotation_deg": 109.89584350585938,
+          "source_image": "square_002.png",
+          "class_name": "square"
+        }
+      ]
+    }
+  ],
+  "classes": [
+    "triangle",
+    "circle",
+    "square"
+  ]
+}

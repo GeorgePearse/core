@@ -1,0 +1,36 @@
+[package]
+name = "memetics"
+version = "0.1.0"
+edition = "2024"
+description = "Standing upstream listeners that turn implementation changes into pull requests"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+base64 = "0.22"
+blake3 = "1.8.7"
+clap = { version = "4", features = ["derive", "env"] }
+hex = "0.4"
+hmac = "0.12"
+libc = "0.2"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+swhid = "0.2.2"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tree-sitter = "0.27.0"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.2"
+tree-sitter-typescript = "0.23.2"
+uuid = { version = "1", features = ["v4"] }
+wait-timeout = "0.2"
+
+[dev-dependencies]

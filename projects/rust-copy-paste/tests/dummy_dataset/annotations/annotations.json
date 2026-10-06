@@ -1,0 +1,209 @@
+{
+  "info": {
+    "description": "Dummy shapes dataset",
+    "version": "1.0",
+    "year": 2024
+  },
+  "licenses": [],
+  "images": [
+    {
+      "id": 1,
+      "file_name": "triangle_000.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 2,
+      "file_name": "triangle_001.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 3,
+      "file_name": "triangle_002.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 4,
+      "file_name": "circle_000.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 5,
+      "file_name": "circle_001.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 6,
+      "file_name": "circle_002.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 7,
+      "file_name": "square_000.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 8,
+      "file_name": "square_001.png",
+      "height": 512,
+      "width": 512
+    },
+    {
+      "id": 9,
+      "file_name": "square_002.png",
+      "height": 512,
+      "width": 512
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 13041,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 1,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 13041,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 3,
+      "image_id": 3,
+      "category_id": 1,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 13041,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 4,
+      "image_id": 4,
+      "category_id": 2,
+      "bbox": [
+        186,
+        186,
+        140,
+        140
+      ],
+      "area": 15373,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 5,
+      "image_id": 5,
+      "category_id": 2,
+      "bbox": [
+        186,
+        186,
+        140,
+        140
+      ],
+      "area": 15373,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 6,
+      "image_id": 6,
+      "category_id": 2,
+      "bbox": [
+        186,
+        186,
+        140,
+        140
+      ],
+      "area": 15373,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 7,
+      "image_id": 7,
+      "category_id": 3,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 25921,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 8,
+      "image_id": 8,
+      "category_id": 3,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 25921,
+      "iscrowd": 0,
+      "segmentation": []
+    },
+    {
+      "id": 9,
+      "image_id": 9,
+      "category_id": 3,
+      "bbox": [
+        176,
+        176,
+        160,
+        160
+      ],
+      "area": 25921,
+      "iscrowd": 0,
+      "segmentation": []
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "triangle",
+      "supercategory": "shape"
+    },
+    {
+      "id": 2,
+      "name": "circle",
+      "supercategory": "shape"
+    },
+    {
+      "id": 3,
+      "name": "square",
+      "supercategory": "shape"
+    }
+  ]
+}

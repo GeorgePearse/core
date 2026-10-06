@@ -1,0 +1,286 @@
+[2025-10-31T15:04:06] OpenAI Codex v0.0.0 (research preview)
+--------
+workdir: /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+model: gpt-5-codex
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: auto
+--------
+[2025-10-31T15:04:06] User instructions:
+Context: Repository at /home/georgepearse/tsrs. We are planning a rename-planning stage similar to pyminifier but without rewriting. Need scope-aware local renaming for functions, excluding class scope and respecting global/nonlocal. Provide complete Python keyword list, prefer simple a, b, c... generator. Output ready to guide implementation.
+
+Agent: Draft a concise design for collecting function-local bindings in rustpython_parser AST: cover params, Assign/AnnAssign/AugAssign targets, For/AsyncFor targets, With/AsyncWith optional_vars, ExceptHandler name, and Import/ImportFrom aliases. Define data structures for FunctionPlan and MinifyPlan and a short-name generator. Return details suitable for serde serialization, with stable function order.
+
+Files to consider: /home/georgepearse/tsrs
+[2025-10-31T15:04:06] OpenAI Codex v0.0.0 (research preview)
+--------
+workdir: /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+model: gpt-5-codex
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: medium
+reasoning summaries: auto
+--------
+[2025-10-31T15:04:06] User instructions:
+Context: Repository at /home/georgepearse/tsrs. We are planning a rename-planning stage similar to pyminifier but without rewriting. Need scope-aware local renaming for functions, excluding class scope and respecting global/nonlocal. Provide complete Python keyword list, prefer simple a, b, c... generator. Output ready to guide implementation.
+
+Agent: Draft a concise design for collecting function-local bindings in rustpython_parser AST: cover params, Assign/AnnAssign/AugAssign targets, For/AsyncFor targets, With/AsyncWith optional_vars, ExceptHandler name, and Import/ImportFrom aliases. Define data structures for FunctionPlan and MinifyPlan and a short-name generator. Return details suitable for serde serialization, with stable function order.
+
+Files to consider: /home/georgepearse/tsrs
+
+[2025-10-31T15:04:12] thinking
+
+**Preparing to inspect repo structure**
+[2025-10-31T15:04:13] exec bash -lc ls in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:14] bash -lc ls succeeded in 694ms:
+Cargo.toml
+README.md
+TESTING.md
+TEST_REPOS_SUMMARY.md
+src
+test_repos
+[2025-10-31T15:04:14] tokens used: 5,863
+
+[2025-10-31T15:04:16] thinking
+
+**Exploring Rust modules**
+[2025-10-31T15:04:16] exec bash -lc 'ls src' in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:17] bash -lc 'ls src' succeeded in 656ms:
+bin
+callgraph.rs
+error.rs
+imports.rs
+lib.rs
+slim.rs
+venv.rs
+[2025-10-31T15:04:17] tokens used: 6,135
+
+[2025-10-31T15:04:22] thinking
+
+**Planning function-local bindings collection**
+[2025-10-31T15:04:22] exec bash -lc 'rg "rustpython" -n' in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:23] bash -lc 'rg "rustpython" -n' succeeded in 658ms:
+Cargo.toml:10:rustpython-parser = "0.3"
+[2025-10-31T15:04:23] tokens used: 6,427
+
+[2025-10-31T15:04:29] thinking
+
+**Drafting design document for new functionality**
+
+I'm preparing a detailed design doc for the new feature, outlining key data structures like FunctionPlan and MinifyPlan, a simple stable name generator, and handling Python scope rules precisely. I'll incorporate a full Python keyword list, clarify AST traversal for stable function ordering, and plan serialization with serde. To align style, I'll peek into existing files like `imports.rs` before finalizing the design summary.
+[2025-10-31T15:04:31] exec bash -lc "sed -n '1,200p' src/imports.rs" in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:32] bash -lc "sed -n '1,200p' src/imports.rs" succeeded in 681ms:
+//! Import tracking and collection
+
+use crate::error::{Result, TsrsError};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::path::Path;
+
+/// Set of unique imports
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ImportSet {
+    /// Imported module names
+    pub imports: HashSet<String>,
+}
+
+impl ImportSet {
+    /// Create a new import set
+    pub fn new() -> Self {
+        ImportSet {
+            imports: HashSet::new(),
+[2025-10-31T15:04:32] tokens used: 7,273
+
+[2025-10-31T15:04:34] thinking
+
+**Checking for existing styles and design plans**
+[2025-10-31T15:04:34] exec bash -lc "sed -n '1,200p' src/slim.rs" in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:35] bash -lc "sed -n '1,200p' src/slim.rs" succeeded in 651ms:
+//! Virtual environment slimming functionality
+
+use crate::error::{Result, TsrsError};
+use crate::imports::ImportCollector;
+use crate::venv::VenvAnalyzer;
+use std::fs;
+use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
+
+/// Creates slim versions of virtual environments
+pub struct VenvSlimmer {
+    code_directory: PathBuf,
+    source_venv: PathBuf,
+    output_venv: PathBuf,
+}
+
+impl VenvSlimmer {
+    /// Create a new venv slimmer that analyzes code_directory and slims source_venv
+    pub fn new<P: AsRef<Path>>(code_directory: P, source_venv: P) -> Result<Self> {
+        let code_dir = code_directory.as_ref().to_path_buf();
+[2025-10-31T15:04:35] tokens used: 14,882
+
+[2025-10-31T15:04:40] thinking
+
+**Reviewing module organization**
+[2025-10-31T15:04:42] exec bash -lc "sed -n '1,200p' src/lib.rs" in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:04:43] bash -lc "sed -n '1,200p' src/lib.rs" succeeded in 680ms:
+pub mod venv;
+pub mod imports;
+pub mod slim;
+pub mod error;
+pub mod callgraph;
+
+pub use venv::{VenvAnalyzer, VenvInfo};
+pub use imports::{ImportCollector, ImportSet};
+pub use slim::VenvSlimmer;
+pub use callgraph::{CallGraphAnalyzer, PackageCallGraph, FunctionRef};
+
+#[cfg(feature = "python-extension")]
+use pyo3::prelude::*;
+
+/// Tree-shaking module for Python
+/// Provides functionality to identify and remove unused code exports
+/// from Python modules and packages.
+#[cfg(feature = "python-extension")]
+#[pymodule]
+fn tsrs(py: Python, m: &PyModule) -> PyResult<()> {
+[2025-10-31T15:04:43] tokens used: 17,636
+
+[2025-10-31T15:05:21] thinking
+
+**Outlining rename-planning design**
+
+I'm crafting a detailed design for the rename-planning stage modeled after pyminifier but without rewriting code. I'll include data structures like FunctionPlan and BindingPlan, describe scope-aware local renaming that excludes class scope but respects global/nonlocal declarations, and propose a simple short name generator favoring single letters. I'll cover how to collect names from the AST using rustpython_parser node types, handling edge cases like comprehensions and destructuring, and maintain a full Python 3.12 keyword list to avoid conflicts. Finally, I'll consider serialization with serde and ensure a stable traversal order for functions. This design will be comprehensive to guide implementation without modifying code yet.
+[2025-10-31T15:05:25] exec bash -lc "python3 - <<'PY'
+import keyword
+print(keyword.kwlist)
+print(len(keyword.kwlist))
+PY" in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:05:25] bash -lc "python3 - <<'PY'
+import keyword
+print(keyword.kwlist)
+print(len(keyword.kwlist))
+PY" exited -1 in 4ms:
+ERROR
+sandbox error: command was killed by a signal
+[2025-10-31T15:05:25] tokens used: 20,206
+
+[2025-10-31T15:05:30] thinking
+
+**Identifying read-only environment limitations**
+[2025-10-31T15:05:31] exec bash -lc "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import keyword
+print(keyword.kwlist)
+print(len(keyword.kwlist))
+PY" in /home/georgepearse/.code/working/tsrs/branches/code-code-gpt-5-codex-draft-concise-design
+[2025-10-31T15:05:31] bash -lc "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import keyword
+print(keyword.kwlist)
+print(len(keyword.kwlist))
+PY" exited -1 in 5ms:
+ERROR
+sandbox error: command was killed by a signal
+[2025-10-31T15:05:31] tokens used: 20,639
+
+[2025-10-31T15:05:54] thinking
+
+**Composing detailed final design message**
+
+I’m organizing a comprehensive design summary covering AST scanning with `rustpython_parser`, function-local renaming excluding class-level scope, handling globals/nonlocals, and capturing function plans with stable ordering. I’ll detail the data structures like `FunctionPlan` and `ShortNameGenerator`, describe local binding collection, and outline next steps to implement the plan without running tests. This will be structured with clear headings and bullet points to guide future development.
+[2025-10-31T15:05:56] codex
+
+Scope-aware rename planner will operate on the `rustpython_parser` AST, walking only `StmtKind::FunctionDef` and `StmtKind::AsyncFunctionDef` nodes (including methods) and ignoring module/class-level assignments. Inside each function we build a stable list of locally-bound identifiers while honoring `global`/`nonlocal` statements so shared names never get renamed.
+
+**Python Keywords**
+`False`, `None`, `True`, `and`, `as`, `assert`, `async`, `await`, `break`, `case`, `class`, `continue`, `def`, `del`, `elif`, `else`, `except`, `finally`, `for`, `from`, `global`, `if`, `import`, `in`, `is`, `lambda`, `match`, `nonlocal`, `not`, `or`, `pass`, `raise`, `return`, `try`, `while`, `with`, `yield`.
+
+**AST Collection Strategy**
+- Parse input with `rustpython_parser::parser::parse_program`; visit statements depth-first but keep a stack that records when we are inside a function and the dotted path (e.g. `module.fn`, `module.Class.method`).
+- When entering a function, initialize a `FunctionPlanBuilder` with: function id (dotted path plus first line), signature span, parent path, and empty `locals`, `globals`, `nonlocals`, `bindings`.
+- Parameters: walk `Arguments` (`posonlyargs`, `args`, `vararg`, `kwonlyargs`, `kwarg`) and add `BindingOrigin::Parameter` entries using the argument’s identifier; skip names equal to `_`.
+- Assignments: handle `StmtKind::{Assign, AnnAssign, AugAssign}`. Recursively destructure each target (`ExprKind::Name`, `Tuple`, `List`, `Attribute`, `Subscript`). Only `Name` nodes in `Store` context become bindings. Record origin `BindingOrigin::Assignment` plus statement span.
+- Loops: for `StmtKind::{For, AsyncFor}` collect `target` names the same way and tag as `BindingOrigin::ForTarget`.
+- `StmtKind::{With, AsyncWith}`: each item’s `optional_vars` handled like assignment targets with origin `BindingOrigin::WithItem`.
+- `StmtKind::Try` -> each `ExceptHandler::ExceptHandler { name: Some(id), .. }` becomes origin `BindingOrigin::ExceptName`.
+- Imports inside the function: for each `StmtKind::Import` alias push either `alias.asname` or the last segment of `alias.name`. For `StmtKind::ImportFrom`, use `asname` if present, otherwise last segment of `name`. Origin `BindingOrigin::Import`.
+- `StmtKind::Global` and `StmtKind::Nonlocal`: extend the builder’s `globals` / `nonlocals`. Names listed there must be removed from `locals` if already present and added to a `reserved` set so the generator never reuses them.
+- Nested functions: recurse; their locals are isolated, but parent builder must treat their function name binding like any other assignment if defined inside the same scope (`def inner():` binds `inner` in enclosing function).
+- Maintain encounter order by tracking `usize visit_index` incremented as we walk statements; store it with each binding so we can sort before serialization.
+- After finishing a function, collapse duplicates: if the same identifier appears with multiple origins, keep the earliest occurrence, but append later origins to a `Vec<BindingOrigin>` for audit. Drop any identifier present in `globals`, `nonlocals`, Python keywords, or a caller-supplied `reserved` list (e.g., builtins).
+
+**Data Structures (derive `Serialize`, `Deserialize`, `Debug`, `Clone`)**
+```rust
+#[serde(rename_all = "snake_case")]
+pub struct MinifyPlan {
+    pub module: String,                  // normalized module path
+    pub keywords: Vec<String>,           // emitted once for tooling
+    pub functions: Vec<FunctionPlan>,    // sorted by (start.line, start.column, function_path)
+}
+
+pub struct FunctionPlan {
+    pub id: FunctionId,                  // dotted path + unique numeric id
+    pub name: String,                    // original function name
+    pub start: SourceLocation,           // lineno/col_offset (1-based)
+    pub end: SourceLocation,
+    pub globals: Vec<String>,
+    pub nonlocals: Vec<String>,
+    pub locals: Vec<LocalBinding>,       // stable order by visit_index
+}
+
+pub struct FunctionId {
+    pub path: Vec<String>,               // e.g. ["pkg", "module", "Class", "method"]
+    pub index: u32,                      // incremental to guarantee uniqueness
+}
+
+pub struct SourceLocation {
+    pub line: u32,
+    pub column: u32,
+}
+
+pub struct LocalBinding {
+    pub original: String,
+    pub replacement: Option<String>,     // fill in during planning; None means keep
+    pub origin: BindingOrigin,
+    pub visit_index: u32,
+}
+
+#[serde(tag = "kind")]
+pub enum BindingOrigin {
+    Parameter,
+    Assignment { line: u32 },
+    ForTarget { line: u32 },
+    WithItem { line: u32 },
+    ExceptName { line: u32 },
+    Import { module: String, line: u32 },
+}
+```
+`FunctionPlan`’s `locals` vector is serialized in encounter order; consumers use `replacement` to rewrite code in a later pipeline stage. `MinifyPlan.functions` is sorted lexicographically by `(start.line, start.column, id.path.join("."))` to guarantee deterministic output.
+
+**Short Name Generator**
+```rust
+pub struct ShortNameGenerator {
+    next: Vec<u8>,                  // base-26 counter over b'a'..b'z'
+    reserved: HashSet<String>,      // keywords + globals + user-specified
+    issued: HashSet<String>,
+}
+```
+- Initialize `reserved` with the keyword list and any additional blocked names (builtins, module attrs, user exclusions). `issued` guarantees uniqueness.
+- `next()` loops: increment counter (start empty -> `a`), convert to string, skip if in `reserved` or already `issued`, otherwise insert into `issued` and return.
+- Counter logic: treat `next` as least-significant digit at the end; starting from empty pushes `b'a'`, then `b'b'`, …, `b'z'`, then rollover to `b'a', b'a'` (`aa`), etc. This keeps names short and alphabetical as requested.
+
+**Serde-Stable Ordering**
+- Assign each `FunctionPlan` a monotonically increasing `index` during traversal. When finishing the module, sort by `(start.line, start.column, index)` to stabilize output if multiple functions share the same start coordinates (e.g., generated code).
+- Within a function, sort `locals` by `visit_index` (already in encounter order) before serialization. Do not sort alphabetically—preserving execution order helps downstream renamers update references consistently.
+
+**Implementation Outline**
+1. Introduce a `rename` module with a `Planner` struct that owns the keyword list, the generator, and helper methods for walking AST nodes.
+2. Parse source, walk the AST, build `FunctionPlan` structs, and populate `replacement` by requesting fresh names from the generator for each local that survives filtering.
+3. Emit `MinifyPlan` via `serde_json` or return the struct to consumers.
+
+Next steps:
+1. Add integration tests that parse sample Python functions covering each origin category and compare the serialized `MinifyPlan` to an expected snapshot.
+2. Wire the planner into the broader pipeline (likely a new CLI subcommand) so rename planning can run end-to-end once rewriting support arrives.
+[2025-10-31T15:06:18] tokens used: 23,514
