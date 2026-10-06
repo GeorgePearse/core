@@ -1,0 +1,1005 @@
+{
+ "version": 1,
+ "types": [
+  {
+   "name": "decision",
+   "description": "A design/architecture/scope choice that was made (often by George), including choosing NOT to adopt or continue something, with its rationale.",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "the system, component, project or problem the decision is about"
+    },
+    {
+     "name": "choice",
+     "kind": "value",
+     "description": "short phrase of what was chosen (or 'not adopted' / 'removed')"
+    },
+    {
+     "name": "alternative",
+     "kind": "entity",
+     "description": "the option rejected or not chosen, if named"
+    },
+    {
+     "name": "decided_by",
+     "kind": "entity",
+     "description": "person who made the call (e.g. George)"
+    },
+    {
+     "name": "rationale",
+     "kind": "value",
+     "description": "short quoted reason for the choice"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date the decision was made"
+    }
+   ],
+   "key": [
+    "subject"
+   ],
+   "value": "choice",
+   "examples": [
+    769,
+    1030
+   ]
+  },
+  {
+   "name": "trap",
+   "description": "A gotcha: a tool/system misbehaves in a non-obvious way (symptom + cause) and there is a known workaround or avoidance.",
+   "roles": [
+    {
+     "name": "tool",
+     "kind": "entity",
+     "description": "the tool, library, CLI or system that misbehaves"
+    },
+    {
+     "name": "symptom",
+     "kind": "value",
+     "description": "the observable failure or error message"
+    },
+    {
+     "name": "cause",
+     "kind": "value",
+     "description": "root cause phrase, if stated"
+    },
+    {
+     "name": "workaround",
+     "kind": "value",
+     "description": "what to do instead / the fix"
+    },
+    {
+     "name": "environment",
+     "kind": "entity",
+     "description": "host, repo or setup where the trap applies, if scoped"
+    }
+   ],
+   "key": [
+    "tool",
+    "symptom"
+   ],
+   "value": "workaround",
+   "examples": [
+    729,
+    754
+   ]
+  },
+  {
+   "name": "system_behavior",
+   "description": "A non-obvious but stable property or rule of how a system works (no failure implied), e.g. CI semantics, write paths, triggers, caching.",
+   "roles": [
+    {
+     "name": "system",
+     "kind": "entity",
+     "description": "the system, service, table or workflow described"
+    },
+    {
+     "name": "behavior",
+     "kind": "value",
+     "description": "short phrase describing what it does"
+    },
+    {
+     "name": "condition",
+     "kind": "value",
+     "description": "the situation in which the behavior applies"
+    },
+    {
+     "name": "version",
+     "kind": "value",
+     "description": "version or date the behavior was observed at, if stated"
+    }
+   ],
+   "key": [
+    "system",
+    "condition"
+   ],
+   "value": "behavior",
+   "examples": [
+    720,
+    81
+   ]
+  },
+  {
+   "name": "compatibility",
+   "description": "A version/environment requirement or incompatibility between a tool and its environment (pinned version, minimum runtime, driver too old).",
+   "roles": [
+    {
+     "name": "tool",
+     "kind": "entity",
+     "description": "the tool, package or library"
+    },
+    {
+     "name": "environment",
+     "kind": "entity",
+     "description": "host, runtime, kernel, driver or repo it must run in"
+    },
+    {
+     "name": "required_version",
+     "kind": "value",
+     "description": "the version that is required or pinned"
+    },
+    {
+     "name": "installed_version",
+     "kind": "value",
+     "description": "the incompatible version actually present"
+    },
+    {
+     "name": "path",
+     "kind": "value",
+     "description": "path to a working binary/interpreter, if given"
+    }
+   ],
+   "key": [
+    "tool",
+    "environment"
+   ],
+   "value": "required_version",
+   "examples": [
+    740,
+    749
+   ]
+  },
+  {
+   "name": "incident",
+   "description": "Something broke or went down at a point in time (main broken, service OOM, host reboot, queue wedged), with cause and impact.",
+   "roles": [
+    {
+     "name": "system",
+     "kind": "entity",
+     "description": "the service, branch, host or pipeline affected"
+    },
+    {
+     "name": "symptom",
+     "kind": "value",
+     "description": "what was observed going wrong"
+    },
+    {
+     "name": "cause",
+     "kind": "value",
+     "description": "root cause, if known"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "when it happened"
+    },
+    {
+     "name": "remediation",
+     "kind": "value",
+     "description": "what was done or must be done to recover"
+    },
+    {
+     "name": "tracking_id",
+     "kind": "value",
+     "description": "incident id, PR or ticket number"
+    }
+   ],
+   "key": [
+    "system",
+    "date"
+   ],
+   "value": "remediation",
+   "examples": [
+    731,
+    2290
+   ]
+  },
+  {
+   "name": "dispatch",
+   "description": "A background job/agent session was launched (tmux session, Modal app, scheduled run) with a worktree, branch and goal.",
+   "roles": [
+    {
+     "name": "session",
+     "kind": "entity",
+     "description": "tmux session / job / app name"
+    },
+    {
+     "name": "worktree",
+     "kind": "entity",
+     "description": "worktree or working directory it runs in"
+    },
+    {
+     "name": "branch",
+     "kind": "entity",
+     "description": "git branch the job works on"
+    },
+    {
+     "name": "goal",
+     "kind": "value",
+     "description": "short phrase of what it will deliver"
+    },
+    {
+     "name": "started_at",
+     "kind": "value",
+     "description": "launch timestamp"
+    }
+   ],
+   "key": [
+    "session"
+   ],
+   "value": "goal",
+   "examples": [
+    1381
+   ]
+  },
+  {
+   "name": "pr_state",
+   "description": "The state of a specific pull request: number, branch, base and status (draft, ready to integrate, merged, blocked, CI failing).",
+   "roles": [
+    {
+     "name": "pr_number",
+     "kind": "value",
+     "description": "PR number, e.g. #18596"
+    },
+    {
+     "name": "branch",
+     "kind": "entity",
+     "description": "head branch of the PR"
+    },
+    {
+     "name": "base",
+     "kind": "entity",
+     "description": "base branch the PR targets"
+    },
+    {
+     "name": "status",
+     "kind": "value",
+     "description": "draft / ready to integrate / merged / CI fixed / blocked etc."
+    },
+    {
+     "name": "feature",
+     "kind": "entity",
+     "description": "the feature or component the PR delivers"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date the status was observed"
+    }
+   ],
+   "key": [
+    "pr_number"
+   ],
+   "value": "status",
+   "examples": [
+    3236,
+    750
+   ]
+  },
+  {
+   "name": "work_status",
+   "description": "Progress status of a workstream or project (active, complete, blocked, paused), and what blocks it, independent of a single PR.",
+   "roles": [
+    {
+     "name": "workstream",
+     "kind": "entity",
+     "description": "the project, experiment or workstream"
+    },
+    {
+     "name": "status",
+     "kind": "value",
+     "description": "active / complete / blocked / paused / abandoned"
+    },
+    {
+     "name": "blocker",
+     "kind": "value",
+     "description": "what it is blocked on, if blocked"
+    },
+    {
+     "name": "tracking_id",
+     "kind": "value",
+     "description": "Linear issue, PR or project id"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date the status was recorded"
+    }
+   ],
+   "key": [
+    "workstream"
+   ],
+   "value": "status",
+   "examples": [
+    722,
+    747
+   ]
+  },
+  {
+   "name": "measurement",
+   "description": "A measured result: a metric value for a subject (model, method, config) on a dataset/condition, from an eval, benchmark or scan.",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "the model, method, pipeline or config measured"
+    },
+    {
+     "name": "metric",
+     "kind": "value",
+     "description": "metric name, e.g. F1, AUROC, max-abs error, AP"
+    },
+    {
+     "name": "value",
+     "kind": "value",
+     "description": "the measured number"
+    },
+    {
+     "name": "dataset",
+     "kind": "entity",
+     "description": "dataset, camera or site measured on"
+    },
+    {
+     "name": "condition",
+     "kind": "value",
+     "description": "setting/comparison qualifier (precision, baseline, split)"
+    }
+   ],
+   "key": [
+    "subject",
+    "metric",
+    "dataset"
+   ],
+   "value": "value",
+   "examples": [
+    755,
+    91
+   ]
+  },
+  {
+   "name": "limit_setting",
+   "description": "A configured parameter, threshold, cap or limit of a system (size limits, timeouts, URL expiry, step caps, calibrated thresholds).",
+   "roles": [
+    {
+     "name": "system",
+     "kind": "entity",
+     "description": "the system or component the parameter belongs to"
+    },
+    {
+     "name": "parameter",
+     "kind": "value",
+     "description": "parameter or limit name"
+    },
+    {
+     "name": "value",
+     "kind": "value",
+     "description": "its value with unit"
+    },
+    {
+     "name": "scope",
+     "kind": "entity",
+     "description": "site, camera, model or environment the value is scoped to"
+    }
+   ],
+   "key": [
+    "system",
+    "parameter",
+    "scope"
+   ],
+   "value": "value",
+   "examples": [
+    1843,
+    87
+   ]
+  },
+  {
+   "name": "price",
+   "description": "The cost of using a model, API, compute or service (per token, per image, per edit, per frame).",
+   "roles": [
+    {
+     "name": "item",
+     "kind": "entity",
+     "description": "model, API or service being priced"
+    },
+    {
+     "name": "provider",
+     "kind": "entity",
+     "description": "vendor or host"
+    },
+    {
+     "name": "amount",
+     "kind": "value",
+     "description": "price figure with currency"
+    },
+    {
+     "name": "unit",
+     "kind": "value",
+     "description": "billing unit, e.g. per M tokens, per edit, per 1k frames"
+    }
+   ],
+   "key": [
+    "item",
+    "provider",
+    "unit"
+   ],
+   "value": "amount",
+   "examples": [
+    688,
+    765
+   ]
+  },
+  {
+   "name": "budget",
+   "description": "A spending allowance or cap authorised for a task, workstream, site or period.",
+   "roles": [
+    {
+     "name": "scope",
+     "kind": "entity",
+     "description": "task, workstream, customer or site the budget covers"
+    },
+    {
+     "name": "amount",
+     "kind": "value",
+     "description": "budget amount with currency"
+    },
+    {
+     "name": "period",
+     "kind": "value",
+     "description": "per task / per month etc."
+    },
+    {
+     "name": "authorised_by",
+     "kind": "entity",
+     "description": "person who set it"
+    },
+    {
+     "name": "covers",
+     "kind": "value",
+     "description": "what spend is included (inference, training, ...)"
+    }
+   ],
+   "key": [
+    "scope",
+    "period"
+   ],
+   "value": "amount",
+   "examples": [
+    724,
+    1593
+   ]
+  },
+  {
+   "name": "model_capability",
+   "description": "Whether a specific model on a specific provider/endpoint supports a capability (images, thinking flag, region, API), or its specs.",
+   "roles": [
+    {
+     "name": "model",
+     "kind": "entity",
+     "description": "the model id"
+    },
+    {
+     "name": "provider",
+     "kind": "entity",
+     "description": "provider / endpoint / region serving it"
+    },
+    {
+     "name": "capability",
+     "kind": "value",
+     "description": "capability or feature in question (vision input, image gen, context length)"
+    },
+    {
+     "name": "supported",
+     "kind": "value",
+     "description": "yes / no / condition under which it works"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date verified"
+    }
+   ],
+   "key": [
+    "model",
+    "provider",
+    "capability"
+   ],
+   "value": "supported",
+   "examples": [
+    673,
+    674
+   ]
+  },
+  {
+   "name": "service_availability",
+   "description": "Whether a service, account or integration is currently usable (no credits, no access, killed API, live and verified).",
+   "roles": [
+    {
+     "name": "service",
+     "kind": "entity",
+     "description": "the service, API, account or integration"
+    },
+    {
+     "name": "status",
+     "kind": "value",
+     "description": "available / unavailable / degraded / deprecated"
+    },
+    {
+     "name": "cause",
+     "kind": "value",
+     "description": "why, e.g. quota exhausted, missing permission"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date observed"
+    }
+   ],
+   "key": [
+    "service"
+   ],
+   "value": "status",
+   "examples": [
+    1485,
+    232
+   ]
+  },
+  {
+   "name": "credential_access",
+   "description": "Which credential/secret/identity can or cannot access which resource, and where that secret is stored.",
+   "roles": [
+    {
+     "name": "credential",
+     "kind": "entity",
+     "description": "secret, key, service account or DB role"
+    },
+    {
+     "name": "resource",
+     "kind": "entity",
+     "description": "database, bucket, API or system accessed"
+    },
+    {
+     "name": "access",
+     "kind": "value",
+     "description": "works / fails / permission granted or lacking"
+    },
+    {
+     "name": "secret_location",
+     "kind": "value",
+     "description": "path of the secrets file or secret-manager name"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date verified"
+    }
+   ],
+   "key": [
+    "credential",
+    "resource"
+   ],
+   "value": "access",
+   "examples": [
+    1204,
+    793
+   ]
+  },
+  {
+   "name": "storage_location",
+   "description": "Where a kind of data or artefact lives (table, bucket path, directory, package) - 'X lives in Y'.",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "the data, artefact, code or config being located"
+    },
+    {
+     "name": "location",
+     "kind": "value",
+     "description": "table name, gs:// path, file path or package"
+    },
+    {
+     "name": "system",
+     "kind": "entity",
+     "description": "the database/store/repo containing it"
+    },
+    {
+     "name": "note",
+     "kind": "value",
+     "description": "short qualifier, e.g. 'write both', 'not the json file'"
+    }
+   ],
+   "key": [
+    "subject"
+   ],
+   "value": "location",
+   "examples": [
+    733,
+    794
+   ]
+  },
+  {
+   "name": "reference_pointer",
+   "description": "A pointer to an external resource (doc, URL, Slack channel, Linear doc, artefact, research digest) and what it is for or found.",
+   "roles": [
+    {
+     "name": "resource",
+     "kind": "entity",
+     "description": "the document, channel, artefact, paper set or tool referenced"
+    },
+    {
+     "name": "location",
+     "kind": "value",
+     "description": "URL, channel id, doc id or path"
+    },
+    {
+     "name": "purpose",
+     "kind": "value",
+     "description": "what it is for or the key finding it holds"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "date created or consulted"
+    }
+   ],
+   "key": [
+    "resource"
+   ],
+   "value": "location",
+   "examples": [
+    1702,
+    677
+   ]
+  },
+  {
+   "name": "procedure",
+   "description": "How to accomplish a specific task: the command(s) or ordered steps, often for an operation that otherwise fails.",
+   "roles": [
+    {
+     "name": "task",
+     "kind": "value",
+     "description": "the task being done, as a short phrase"
+    },
+    {
+     "name": "tool",
+     "kind": "entity",
+     "description": "main tool/system used"
+    },
+    {
+     "name": "command",
+     "kind": "value",
+     "description": "the command or step sequence"
+    },
+    {
+     "name": "precondition",
+     "kind": "value",
+     "description": "what must be true / set up first"
+    }
+   ],
+   "key": [
+    "task"
+   ],
+   "value": "command",
+   "examples": [
+    780,
+    1534
+   ]
+  },
+  {
+   "name": "preference",
+   "description": "A person's stated preference for one tool/approach over another, or a ban on a tool/vendor, in some context.",
+   "roles": [
+    {
+     "name": "person",
+     "kind": "entity",
+     "description": "who holds the preference (usually George)"
+    },
+    {
+     "name": "preferred",
+     "kind": "entity",
+     "description": "tool, library or approach preferred"
+    },
+    {
+     "name": "avoided",
+     "kind": "entity",
+     "description": "tool or approach disfavoured or banned"
+    },
+    {
+     "name": "context",
+     "kind": "value",
+     "description": "domain where the preference applies"
+    },
+    {
+     "name": "reason",
+     "kind": "value",
+     "description": "why, if stated"
+    }
+   ],
+   "key": [
+    "person",
+    "context"
+   ],
+   "value": "preferred",
+   "examples": [
+    34,
+    28
+   ]
+  },
+  {
+   "name": "working_rule",
+   "description": "A standing always/never rule for how the agent must work or what deliverables must include (process, reporting, style), not tied to one tool choice.",
+   "roles": [
+    {
+     "name": "context",
+     "kind": "value",
+     "description": "the activity the rule governs (training, reporting, git, analysis HTML)"
+    },
+    {
+     "name": "directive",
+     "kind": "value",
+     "description": "the always/never instruction"
+    },
+    {
+     "name": "issued_by",
+     "kind": "entity",
+     "description": "who set the rule"
+    },
+    {
+     "name": "reason",
+     "kind": "value",
+     "description": "the incident or rationale behind it"
+    }
+   ],
+   "key": [
+    "context"
+   ],
+   "value": "directive",
+   "examples": [
+    5,
+    15
+   ]
+  },
+  {
+   "name": "ownership",
+   "description": "Who/what is responsible for or exclusively allowed to act on a resource (integrator merges, service owns a port, team owns a system).",
+   "roles": [
+    {
+     "name": "owner",
+     "kind": "entity",
+     "description": "person, session, service or team responsible"
+    },
+    {
+     "name": "resource",
+     "kind": "entity",
+     "description": "worktree, branch, port, system or process owned"
+    },
+    {
+     "name": "responsibility",
+     "kind": "value",
+     "description": "what the owner does / is allowed to do"
+    }
+   ],
+   "key": [
+    "resource",
+    "responsibility"
+   ],
+   "value": "owner",
+   "examples": [
+    1389,
+    1257
+   ]
+  },
+  {
+   "name": "deployment_state",
+   "description": "What is currently running live where: service, host/port, branch/commit/version and environment.",
+   "roles": [
+    {
+     "name": "service",
+     "kind": "entity",
+     "description": "the deployed service or app"
+    },
+    {
+     "name": "host",
+     "kind": "entity",
+     "description": "host, worktree or environment it runs on"
+    },
+    {
+     "name": "port",
+     "kind": "value",
+     "description": "port number(s)"
+    },
+    {
+     "name": "version",
+     "kind": "value",
+     "description": "branch, commit sha or release running"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "when observed"
+    }
+   ],
+   "key": [
+    "service",
+    "host"
+   ],
+   "value": "version",
+   "examples": [
+    2290,
+    2353
+   ]
+  },
+  {
+   "name": "definition",
+   "description": "What a term, name or codename means (George's vocabulary, method names, product aliases).",
+   "roles": [
+    {
+     "name": "term",
+     "kind": "value",
+     "description": "the word, name or alias"
+    },
+    {
+     "name": "meaning",
+     "kind": "value",
+     "description": "short definition phrase"
+    },
+    {
+     "name": "referent",
+     "kind": "entity",
+     "description": "the system, model or method the term denotes"
+    },
+    {
+     "name": "defined_by",
+     "kind": "entity",
+     "description": "who coined/uses it"
+    }
+   ],
+   "key": [
+    "term"
+   ],
+   "value": "meaning",
+   "examples": [
+    684,
+    1196
+   ]
+  },
+  {
+   "name": "correction",
+   "description": "An earlier record, report, name or belief was wrong and is replaced (renames, mistaken wording, superseded facts).",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "the thing whose value was corrected"
+    },
+    {
+     "name": "wrong_value",
+     "kind": "value",
+     "description": "the old/incorrect value or name"
+    },
+    {
+     "name": "correct_value",
+     "kind": "value",
+     "description": "the corrected value or name"
+    },
+    {
+     "name": "corrected_by",
+     "kind": "entity",
+     "description": "who made the correction"
+    },
+    {
+     "name": "date",
+     "kind": "value",
+     "description": "when corrected"
+    }
+   ],
+   "key": [
+    "subject"
+   ],
+   "value": "correct_value",
+   "examples": [
+    797,
+    988
+   ]
+  },
+  {
+   "name": "relation",
+   "description": "A structural relation between two named things: part_of, depends_on, stacked_on, registered_in, belongs_to category, same_as.",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "the first entity"
+    },
+    {
+     "name": "relation",
+     "kind": "value",
+     "description": "relation name, e.g. part_of, stacked_on, is_modality"
+    },
+    {
+     "name": "object",
+     "kind": "entity",
+     "description": "the second entity"
+    },
+    {
+     "name": "qualifier",
+     "kind": "value",
+     "description": "ids, ranges or conditions qualifying the relation"
+    }
+   ],
+   "key": [
+    "subject",
+    "relation"
+   ],
+   "value": "object",
+   "examples": [
+    813,
+    701
+   ]
+  },
+  {
+   "name": "data_issue",
+   "description": "A defect in a dataset or data store (bad labels, misaligned GT, rewritten frames, double-normalisation, sequence drift) with its extent and remediation.",
+   "roles": [
+    {
+     "name": "dataset",
+     "kind": "entity",
+     "description": "dataset, table, camera or image set affected"
+    },
+    {
+     "name": "issue",
+     "kind": "value",
+     "description": "short description of the defect"
+    },
+    {
+     "name": "extent",
+     "kind": "value",
+     "description": "how much is affected (count, fraction, ids)"
+    },
+    {
+     "name": "remediation",
+     "kind": "value",
+     "description": "fix applied or recommended"
+    }
+   ],
+   "key": [
+    "dataset",
+    "issue"
+   ],
+   "value": "extent",
+   "examples": [
+    710,
+    704
+   ]
+  },
+  {
+   "name": "other",
+   "description": "Catch-all for records that fit none of the other types (index/archive headers, unstructured notes).",
+   "roles": [
+    {
+     "name": "subject",
+     "kind": "entity",
+     "description": "main entity the record is about"
+    }
+   ],
+   "key": [
+    "subject"
+   ],
+   "value": null,
+   "examples": [
+    1
+   ]
+  }
+ ]
+}
