@@ -89,6 +89,7 @@ nav:
       - Recent Papers: papers.md
       - DSPy Integration Ideas: dspy_integration.md
       - OpenR Integration: openr_integration.md
+      - Higher Structure in AI Memory: higher_structure_memory.md
   - API Reference:
       - Core:
           - Runner: api/core/runner.md
