@@ -49,6 +49,8 @@ dependencies = [
     "google-generativeai",
     "mcp>=1.0.0",
     "clickhouse-connect>=0.7.0",
+    "polars>=1.0",
+    "httpx>=0.27",
 ]
 
 [project.scripts]
@@ -59,7 +61,7 @@ script-files = ["lib/python/genesis/genesis_launch", "lib/python/genesis/genesis
 
 [tool.setuptools.packages.find]
 where = ["lib/python"]
-include = ["genesis", "genesis.*", "squeeze", "squeeze.*"]
+include = ["genesis", "genesis.*", "squeeze", "squeeze.*", "memtype", "memtype.*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
