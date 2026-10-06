@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "listeners": [
+    {
+      "id": "deepseek-tool-result-pruning",
+      "enabled": false,
+      "relationship": "prospective",
+      "upstream": {
+        "repository": "deepseek-ai/deepseek-harness",
+        "url": "https://github.com/deepseek-ai/deepseek-harness",
+        "ref": "master",
+        "baseline_commit": "5badb15009ae1756c3afe0ae0cef1faafc290ccc",
+        "paths": [
+          "packages/compaction/compaction-tool-result-pruner/src/",
+          "packages/compaction/compaction-tool-result-pruner/tests/"
+        ],
+        "symbols": [
+          "ToolResultPruner.pruneContent",
+          "ToolResultPruner.pruneSession"
+        ]
+      },
+      "concern": "Keep our agent tool-result pruning aligned with relevant DeepSeek changes to retained context and oversized-output handling.",
+      "destination": {
+        "repository": "example/agent-runtime",
+        "base_ref": "main",
+        "paths": [
+          "src/agent/tool-results.ts"
+        ],
+        "test_paths": [
+          "tests/agent/tool-results.test.ts"
+        ]
+      },
+      "adaptation": {
+        "instructions": "Implement relevant upstream behavior through our existing interfaces and port applicable regression tests.",
+        "preserve": [
+          "Public tool-result API",
+          "Rich content block order",
+          "Unicode-safe text boundaries"
+        ],
+        "validation_commands": [
+          "pnpm exec vitest run tests/agent/tool-results.test.ts"
+        ]
+      },
+      "delivery": {
+        "mode": "automatic_draft_pr",
+        "update_existing_pr": true,
+        "auto_merge": false
+      }
+    }
+  ]
+}

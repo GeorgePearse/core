@@ -2,7 +2,7 @@
   "schema_version": 1,
   "snapshot_date": "2026-10-06",
   "destination": "https://github.com/GeorgePearse/core",
-  "import_mode": "exact tracked default-branch tree snapshots; no original commit history or external LFS payloads",
+  "import_mode": "exact tracked tree snapshots; default branches except recorded memetics PR; no original commit history or external LFS payloads",
   "selection": {
     "scope": "ten public repositories owned by GeorgePearse",
     "criteria": [
@@ -11,7 +11,7 @@
       "tests, documentation, or benchmarks",
       "useful coverage across numerical computing, vision, and agent tooling"
     ],
-    "note": "Qualitative curation, not a claim these are the ten largest repositories. Commit counts are one signal; upstream history and bots are not credited as personal effort. Private repositories, empty placeholders, and unchanged third-party forks were not imported."
+    "note": "Qualitative curation based on implemented content and personal effort. Memetics replaces LinearManager at the owner request; its unmerged Rust implementation is explicitly pinned. Memetics was made public with owner authorization before this import."
   },
   "projects": [
     {
@@ -183,23 +183,26 @@
       "selection_reason": "47 account-attributed commits; multi-crate implementation, CLI, tests, benchmarks, and integration guides."
     },
     {
-      "name": "LinearManager",
-      "path": "projects/LinearManager",
-      "source_repository": "https://github.com/GeorgePearse/LinearManager",
+      "name": "memetics",
+      "path": "projects/memetics",
+      "source_repository": "https://github.com/GeorgePearse/memetics",
       "source_visibility": "public",
-      "source_branch": "main",
-      "source_commit": "fcd287c5e6975a0a11407bf2242a31f58603f355",
-      "source_tree": "0f1c3b48c8a3a718644f13c93682672197c95ed3",
-      "source_commit_date": "2025-11-14T14:20:56Z",
-      "account_attributed_commits": 64,
-      "tracked_files": 44,
-      "tracked_bytes": 455643,
+      "source_branch": "feat/rust-rewrite",
+      "source_commit": "269e30854d1b056b6990d5ff8f538e7f85f4f938",
+      "source_tree": "2f2a2f435d5a418809c8adb8af4ec14ee1300e72",
+      "source_commit_date": "2026-10-06T19:39:45+00:00",
+      "source_pull_request": "https://github.com/GeorgePearse/memetics/pull/2",
+      "source_status": "open draft PR; not merged into default branch",
+      "account_attributed_commits": null,
+      "tracked_files": 32,
+      "tracked_bytes": 346967,
       "detected_license": null,
+      "declared_package_license": "MIT",
       "license_files": [],
       "lfs_pointer_files": [],
       "symlinks": [],
-      "purpose": "Linear workflow tooling",
-      "selection_reason": "64 account-attributed commits; implemented pull/push/list workflows, CLI code, tests, and supporting scripts."
+      "purpose": "Upstream implementation listeners and idea provenance",
+      "selection_reason": "Selected by George to replace LinearManager; Rust listeners, shared update processing, draft adaptation PRs, idea manifests, drift detection, and tests."
     },
     {
       "name": "evaluator",

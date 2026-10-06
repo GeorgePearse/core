@@ -1,0 +1,39 @@
+name: idea-drift
+on:
+  pull_request:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    env:
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --quiet
+      - name: Judge changes to idea code
+        id: drift
+        if: env.AI_GATEWAY_API_KEY != ''
+        env:
+          MEMETICS_STATE: ${{ runner.temp }}/memetics
+        run: |
+          base=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+          set +e
+          ./target/release/memetics check-commit "$base..HEAD" --format markdown > drift.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat drift.md
+      - name: Comment verdicts on the PR
+        if: steps.drift.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -s drift.md ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file drift.md --edit-last \
+              || gh pr comment "${{ github.event.pull_request.number }}" --body-file drift.md
+          fi
+          exit "${{ steps.drift.outputs.code }}"

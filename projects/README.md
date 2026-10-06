@@ -8,7 +8,9 @@ Selection considered implemented content, sustained personal development, tests,
 documentation, benchmarks, and coverage across useful project areas. The commit
 counts below are commits GitHub attributes to GeorgePearse on the pinned branch;
 they are evidence of activity, not a quality score. Upstream histories were not
-counted as personal effort. Private repositories and placeholders were excluded.
+counted as personal effort. Memetics replaces LinearManager at the owner's request and was made public before
+import. Its account-attributed commit count was not assessed; the other counts
+are retained from the original inventory.
 
 | Project | Purpose | Account-attributed commits | Tracked files | Pinned source |
 | --- | --- | ---: | ---: | --- |
@@ -20,7 +22,7 @@ counted as personal effort. Private repositories and placeholders were excluded.
 | [vision-agents](vision-agents/) | Vision experiments and tooling | 118 | 69 | [d6bbc028](https://github.com/GeorgePearse/vision-agents/tree/d6bbc028e44f9d811e886217fb21d70718b00621) |
 | [tsrs](tsrs/) | Python analysis and slimming in Rust | 50 | 224 | [6ecb112f](https://github.com/GeorgePearse/tsrs/tree/6ecb112f4f7ba8868804ed9d5cb9e71ca8002de0) |
 | [optillm-rs](optillm-rs/) | LLM inference strategies in Rust | 47 | 373 | [78e540f3](https://github.com/GeorgePearse/optillm-rs/tree/78e540f3c4a909a39eaf3fe2e2a2fa99350c54f6) |
-| [LinearManager](LinearManager/) | Linear workflow tooling | 64 | 44 | [fcd287c5](https://github.com/GeorgePearse/LinearManager/tree/fcd287c5e6975a0a11407bf2242a31f58603f355) |
+| [memetics](memetics/) | Upstream implementation listeners and idea provenance | Not assessed | 32 | [269e3085](https://github.com/GeorgePearse/memetics/tree/269e30854d1b056b6990d5ff8f538e7f85f4f938) |
 | [evaluator](evaluator/) | Coding-agent evaluation | 37 | 61 | [f9d2e816](https://github.com/GeorgePearse/evaluator/tree/f9d2e8166f2b33b94104fc330c79ffd3302f0c39) |
 
 ## What was already in core
@@ -42,7 +44,7 @@ source snapshots. They do not overwrite or replace those existing integrations.
 - **vision-agents**: 118 account-attributed commits; active-learning runner, agent tooling, frontend, tests, and presentation material.
 - **tsrs**: 50 account-attributed commits; CLI/library code, Python integration, substantial test fixtures, and design documentation.
 - **optillm-rs**: 47 account-attributed commits; multi-crate implementation, CLI, tests, benchmarks, and integration guides.
-- **LinearManager**: 64 account-attributed commits; implemented pull/push/list workflows, CLI code, tests, and supporting scripts.
+- **memetics**: Selected by George to replace LinearManager; Rust listeners, shared update processing, draft adaptation PRs, idea manifests, drift detection, and tests.
 - **evaluator**: 37 account-attributed commits; evaluation code, sandbox integration, tests, and documentation for agent and diff evaluation.
 
 ## Working with the copies
@@ -71,7 +73,10 @@ license notices remain authoritative for their respective projects; the root
 license does not relicense the imported work. A null detected license means GitHub
 did not identify a repository license, not that unrestricted reuse is granted.
 
-These are snapshots of **default branches**, not all branches or pull requests.
+Nine snapshots use **default branches**. Memetics uses the unmerged Rust
+implementation from [PR #2](https://github.com/GeorgePearse/memetics/pull/2),
+branch `feat/rust-rewrite`, pinned at `269e3085`; its default branch contains
+only a README. Importing this snapshot does not merge that source PR.
 For example, the optional Rust backend and uv refresh in bayesian_filters PRs
 [#141](https://github.com/GeorgePearse/bayesian_filters/pull/141) and
 [#140](https://github.com/GeorgePearse/bayesian_filters/pull/140) were still unmerged

@@ -1,5 +1,0 @@
-team_key: ENG
-title: Fix memory leak in webhook processor
-description: Memory usage grows unbounded when processing webhooks
-state: Todo
-priority: 1

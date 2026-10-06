@@ -41,7 +41,7 @@ The framework supports **parallel evaluation of candidates** locally or in cloud
 
 ## Side-project copies
 
-[Browse ten selected projects](projects/README.md): Genesis, Squeeze, Bayesian Filters, mcp-tui-test, rust-copy-paste, vision-agents, tsrs, optillm-rs, LinearManager, and evaluator. Each copy includes pinned source provenance and retains its own setup and licensing.
+[Browse ten selected projects](projects/README.md): Genesis, Squeeze, Bayesian Filters, mcp-tui-test, rust-copy-paste, vision-agents, tsrs, optillm-rs, Memetics, and evaluator. Each copy includes pinned source provenance and retains its own setup and licensing.
 
 ## Installation & Quick Start 🚀
 
