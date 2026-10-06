@@ -1,0 +1,59 @@
+{
+  "images": [
+    {
+      "image_id": 1,
+      "frame_uri": "gs://binit-dev-images/test_image_001.jpg",
+      "dataset_name": "synthetic_test",
+      "annotations": [
+        { "label": "circle", "box": [100, 100, 150, 150] },
+        { "label": "rectangle", "box": [200, 200, 280, 260] },
+        { "label": "triangle", "box": [50, 300, 100, 350] }
+      ]
+    },
+    {
+      "image_id": 2,
+      "frame_uri": "gs://binit-dev-images/test_image_002.jpg",
+      "dataset_name": "synthetic_test",
+      "annotations": [
+        { "label": "circle", "box": [300, 150, 380, 230] },
+        { "label": "rectangle", "box": [100, 50, 200, 120] },
+        { "label": "circle", "box": [400, 300, 470, 370] },
+        { "label": "triangle", "box": [200, 400, 280, 460] }
+      ]
+    },
+    {
+      "image_id": 3,
+      "frame_uri": "gs://binit-dev-images/test_image_003.jpg",
+      "dataset_name": "synthetic_test",
+      "annotations": [
+        { "label": "rectangle", "box": [50, 50, 150, 120] },
+        { "label": "triangle", "box": [300, 100, 400, 200] },
+        { "label": "circle", "box": [200, 300, 280, 380] },
+        { "label": "rectangle", "box": [450, 250, 580, 350] },
+        { "label": "circle", "box": [100, 400, 180, 450] }
+      ]
+    },
+    {
+      "image_id": 4,
+      "frame_uri": "gs://binit-dev-images/test_image_004.jpg",
+      "dataset_name": "synthetic_test",
+      "annotations": [
+        { "label": "triangle", "box": [150, 150, 250, 250] },
+        { "label": "circle", "box": [400, 100, 480, 180] },
+        { "label": "rectangle", "box": [300, 350, 420, 420] }
+      ]
+    },
+    {
+      "image_id": 5,
+      "frame_uri": "gs://binit-dev-images/test_image_005.jpg",
+      "dataset_name": "synthetic_test",
+      "annotations": [
+        { "label": "circle", "box": [100, 100, 200, 200] },
+        { "label": "circle", "box": [300, 300, 400, 400] },
+        { "label": "rectangle", "box": [450, 100, 580, 200] },
+        { "label": "triangle", "box": [200, 400, 350, 470] },
+        { "label": "circle", "box": [50, 300, 150, 380] }
+      ]
+    }
+  ]
+}

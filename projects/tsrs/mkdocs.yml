@@ -1,0 +1,56 @@
+site_name: tsrs - Tree-Shaking in Rust for Python
+site_description: Remove unused dependencies and code from Python virtual environments
+site_url: https://georgepearse.github.io/tsrs/
+repo_url: https://github.com/GeorgePearse/tsrs
+repo_name: GeorgePearse/tsrs
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: light blue
+  features:
+    - navigation.tabs
+    - navigation.top
+    - toc.integrate
+    - content.code.copy
+
+extra_css:
+  - assets/custom.css
+
+plugins:
+  - search
+
+nav:
+  - Home: README.md
+  - Applications:
+    - Overview: APPLICATIONS.md
+    - Minification Guide: MINIFICATION_GUIDE.md
+    - Test Selection Guide: TEST_SELECTION_GUIDE.md
+    - AI Transpilation Guide: TRANSPILE_AI_GUIDE.md
+  - Getting Started:
+    - Contributing: CONTRIBUTING.md
+    - Testing: TESTING.md
+  - Documentation:
+    - API Reference: API.md
+    - Implementation Guide: IMPLEMENTATION_GUIDE.md
+    - Minification Design: MINIFY_DESIGN.md
+    - Test Repositories: TEST_REPOS_SUMMARY.md
+    - Cross-Package Analysis: CROSS_PACKAGE_ANALYSIS.md
+  - Architecture & Design:
+    - Architecture Guide: AGENTS.md
+    - Alternative Approaches: ALTERNATIVE_APPROACHES.md
+  - Release Notes:
+    - Changelog: CHANGELOG.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details

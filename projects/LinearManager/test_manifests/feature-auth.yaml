@@ -1,0 +1,5 @@
+team_key: ENG
+title: Implement OAuth2 authentication
+description: Add OAuth2 support for third-party integrations
+state: Done
+priority: 3

@@ -1,0 +1,22 @@
+evaluate_function:
+  _target_: examples.agent_design.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+  time: "01:00:00"
+
+evo_config:
+  task_sys_msg: >
+    You are an expert machine learning engineer tasked with designing a new agentic system capable of solving math problems.
+
+    You will be given a program that implements an agent scaffold. Your goal is to design a new agentic system by suggesting improvements to the scaffold.
+
+    You will be given a set of performance metrics for the program. Your goal is to maximize the `combined_score` of the program.
+  language: "python"
+  init_program_path: "examples/agent_design/initial.py"
+  job_type: "local"
+
+exp_name: "genesis_agent_design"

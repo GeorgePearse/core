@@ -1,0 +1,94 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [master, main]
+  schedule:
+    # Run weekly to track performance drift
+    - cron: '0 0 * * 0'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git log
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv package manager
+        run: |
+          pip install uv maturin
+
+      - name: Build Rust extension with Maturin
+        run: |
+          maturin develop
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e ".[benchmarks]"
+
+      - name: Run Rust tests
+        run: |
+          cargo test --test integration_test -- --nocapture
+          cargo test --lib -- --nocapture
+
+      - name: Generate dummy dataset
+        run: |
+          python tests/create_dummy_dataset.py
+
+      - name: Run benchmarks
+        run: |
+          python benchmarks/collect_metrics.py
+
+      - name: Upload metrics
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: metrics
+          path: metrics/metrics.json
+          retention-days: 30
+
+      - name: Commit metrics to repository
+        if: success() && github.event_name == 'push'
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+
+          # Check if metrics.json changed
+          if git diff --quiet metrics/metrics.json; then
+            echo "No metrics changes"
+          else
+            git add metrics/metrics.json
+            git commit -m "📈 Update performance metrics"
+            git push
+          fi
+        continue-on-error: true  # Don't fail if there's nothing to commit
+
+      - name: Generate metrics report
+        if: always()
+        run: |
+          echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "metrics/metrics.json" ]; then
+            echo "✅ Metrics collected successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Latest entry:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -1 metrics/metrics.json | python -m json.tool | head -20 >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No metrics file found" >> $GITHUB_STEP_SUMMARY
+          fi

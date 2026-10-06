@@ -1,0 +1,9 @@
+Okay, I'll scan the repo to understand it, starting with a file listing that respects `.gitignore`.Right, I'll read `README.md`, `TESTING.md`, and `Cargo.toml` to grasp the project's purpose, usage, testing, and dependencies. I'll also search for `AGENTS.md` since it's not in the root.Okay, I've reviewed the `README.md`, `TESTING.md`, and `Cargo.toml`. Here's what I've gathered:
+
+*   **Project:** `tsrs` is a Rust-based tool for tree-shaking Python virtual environments. It can be used as a CLI tool or a Python extension.
+*   **Core Logic:** It works by scanning Python code for imports, mapping them to installed packages in a virtual environment, and then creating a new "slim" virtual environment containing only the necessary packages.
+*   **Philosophy:** The project prioritizes "High Precision, Low Recall," meaning it's more important to not break the code by removing something essential than it is to remove every last piece of unused code.
+*   **Testing:** The testing strategy is robust. It involves creating a full virtual environment, running tests, running `tsrs` to create a slim venv, and then running the same tests again in the slim venv to ensure nothing is broken. There are existing test repositories that exercise this process.
+*   **Dependencies:** The project uses `pyo3` for Python interoperability, `rustpython-parser` for parsing Python code, `walkdir` for directory traversal, `serde` for serialization, `clap` for CLI argument parsing, and `tracing` for logging.
+
+Now, I'll search for `TODO`, `FIXME`, and `WIP` comments in the codebase to identify areas that are explicitly marked as incomplete. I'll also look for an `AGENTS.md` file again, just in case it's in a subdirectory.

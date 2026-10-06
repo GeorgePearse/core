@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "used-ns-pkg-part"
+version = "0.1.0"
+description = "Additional portion of used_ns_pkg namespace"
+requires-python = ">=3.8"

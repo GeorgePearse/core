@@ -39,6 +39,10 @@ The framework supports **parallel evaluation of candidates** locally or in cloud
 | 🌐 **[Live Demo](https://genesis-frontend-a7eq2wihnq-nw.a.run.app/)** | Hosted Genesis frontend | Try Genesis in the browser |
 | 🗺️ **[Roadmap](ROADMAP.md)** | Future plans and language support | Supported languages, execution backends, planned features |
 
+## Side-project copies
+
+[Browse ten selected projects](projects/README.md): Genesis, Squeeze, Bayesian Filters, mcp-tui-test, rust-copy-paste, vision-agents, tsrs, optillm-rs, LinearManager, and evaluator. Each copy includes pinned source provenance and retains its own setup and licensing.
+
 ## Installation & Quick Start 🚀
 
 ```bash

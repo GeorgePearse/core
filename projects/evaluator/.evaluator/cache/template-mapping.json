@@ -1,0 +1,15 @@
+{
+  "curated_templates": {
+    "base": {
+      "description": "Minimal Python 3.11 environment with anthropic SDK",
+      "dockerfile": ".retrocode/environments/base.Dockerfile",
+      "template_id": null
+    },
+    "claude-tools": {
+      "description": "Full environment with CLI tools (rg, fd, uv, fzf, jq, yq, ast-grep)",
+      "dockerfile": ".retrocode/environments/claude-tools.Dockerfile",
+      "template_id": null
+    }
+  },
+  "custom_templates": {}
+}

@@ -1,0 +1,20 @@
+# Variant configuration for t-SNE gradient optimization
+# Runs locally with 50 generations
+
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: squeeze_tsne
+  - override /cluster@_global_: local
+  - _self_
+
+job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: genesis/eval_hydra.py
+
+evo_config:
+  job_type: "local"
+  num_generations: 50
+  max_parallel_jobs: 1
+
+variant_suffix: "_example"

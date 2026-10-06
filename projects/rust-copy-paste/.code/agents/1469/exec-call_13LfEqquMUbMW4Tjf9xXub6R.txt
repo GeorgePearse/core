@@ -1,0 +1,1508 @@
+src/lib.rs:24:pub struct AugmentationConfig {
+src/lib.rs:48:impl AugmentationConfig {
+src/lib.rs:63:        AugmentationConfig {
+src/lib.rs:110:pub struct CopyPasteTransform {
+src/lib.rs:111:    config: AugmentationConfig,
+src/lib.rs:129:            config: AugmentationConfig {
+src/lib.rs:194:            let placed_objects = objects::place_objects(
+src/lib.rs:217:    pub fn apply_to_bboxes(
+src/lib.rs:228:    pub fn get_config(&self) -> AugmentationConfig {
+src/lib.rs:246:        let config = AugmentationConfig::new(
+src/objects.rs:240:pub struct PlacedObject {
+src/objects.rs:262:fn transform_patch(
+src/objects.rs:403:pub fn place_objects(
+src/objects.rs:412:) -> Vec<PlacedObject> {
+src/objects.rs:413:    let mut placed: Vec<PlacedObject> = Vec::new();
+src/objects.rs:464:                transform_patch(&obj.image, &obj.mask, rotation, scale)
+src/objects.rs:539:        let placed_obj = PlacedObject {
+src/objects.rs:563:    placed_objects: &[PlacedObject],
+src/objects.rs:636:pub fn generate_output_bboxes(placed_objects: &[PlacedObject]) -> Vec<(f32, f32, f32, f32)> {
+src/objects.rs:645:pub fn update_output_mask(output_mask: &mut Array3<u8>, placed_objects: &[PlacedObject]) {
+src/objects.rs:740:    fn test_place_objects_single() {
+src/objects.rs:749:        let placed = place_objects(
+src/objects.rs:766:    fn test_place_objects_collision_detection() {
+src/objects.rs:776:        let placed = place_objects(
+src/objects.rs:807:        let placed = vec![PlacedObject {
+src/objects.rs:834:        let placed = vec![PlacedObject {
+use numpy::{
+    IntoPyArray, PyArray1, PyArray3, PyReadonlyArray1, PyReadonlyArray3, PyUntypedArrayMethods,
+};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
+use std::collections::HashMap;
+
+mod affine;
+mod blending;
+mod collision;
+mod objects;
+
+/// Python module for copy-paste augmentation (_core submodule)
+#[pymodule]
+fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<CopyPasteTransform>()?;
+    m.add_class::<ObjectPaste>()?;
+    Ok(())
+}
+
+/// Configuration for a copy-paste augmentation operation
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct AugmentationConfig {
+    #[pyo3(get, set)]
+    pub image_width: u32,
+    #[pyo3(get, set)]
+    pub image_height: u32,
+    #[pyo3(get, set)]
+    pub max_paste_objects: u32,
+    #[pyo3(get)]
+    pub object_counts: HashMap<u32, u32>, // class_id -> exact count to paste
+    #[pyo3(get, set)]
+    pub use_rotation: bool,
+    #[pyo3(get, set)]
+    pub use_scaling: bool,
+    #[pyo3(get, set)]
+    pub rotation_range: (f32, f32),
+    #[pyo3(get, set)]
+    pub scale_range: (f32, f32),
+    #[pyo3(get, set)]
+    pub use_random_background: bool,
+    #[pyo3(get, set)]
+    pub blend_mode: String,
+}
+
+#[pymethods]
+impl AugmentationConfig {
+    #[new]
+    #[pyo3(signature = (image_width, image_height, max_paste_objects, use_rotation, use_scaling, rotation_range, scale_range, use_random_background, blend_mode, object_counts=None))]
+    pub fn new(
+        image_width: u32,
+        image_height: u32,
+        max_paste_objects: u32,
+        use_rotation: bool,
+        use_scaling: bool,
+        rotation_range: (f32, f32),
+        scale_range: (f32, f32),
+        use_random_background: bool,
+        blend_mode: String,
+        object_counts: Option<HashMap<u32, u32>>,
+    ) -> Self {
+        AugmentationConfig {
+            image_width,
+            image_height,
+            max_paste_objects,
+            object_counts: object_counts.unwrap_or_default(),
+            use_rotation,
+            use_scaling,
+            rotation_range,
+            scale_range,
+            use_random_background,
+            blend_mode,
+        }
+    }
+}
+
+/// A single object to be pasted
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct ObjectPaste {
+    #[pyo3(get, set)]
+    pub x: f32,
+    #[pyo3(get, set)]
+    pub y: f32,
+    #[pyo3(get, set)]
+    pub scale: f32,
+    #[pyo3(get, set)]
+    pub rotation: f32,
+    #[pyo3(get, set)]
+    pub class_id: u32,
+}
+
+#[pymethods]
+impl ObjectPaste {
+    #[new]
+    pub fn new(x: f32, y: f32, scale: f32, rotation: f32, class_id: u32) -> Self {
+        ObjectPaste {
+            x,
+            y,
+            scale,
+            rotation,
+            class_id,
+        }
+    }
+}
+
+/// Main copy-paste augmentation transform
+#[pyclass]
+pub struct CopyPasteTransform {
+    config: AugmentationConfig,
+}
+
+#[pymethods]
+impl CopyPasteTransform {
+    #[new]
+    #[pyo3(signature = (image_width, image_height, max_paste_objects, use_rotation, use_scaling, use_random_background, blend_mode, object_counts=None))]
+    pub fn new(
+        image_width: u32,
+        image_height: u32,
+        max_paste_objects: u32,
+        use_rotation: bool,
+        use_scaling: bool,
+        use_random_background: bool,
+        blend_mode: String,
+        object_counts: Option<HashMap<u32, u32>>,
+    ) -> Self {
+        CopyPasteTransform {
+            config: AugmentationConfig {
+                image_width,
+                image_height,
+                max_paste_objects,
+                object_counts: object_counts.unwrap_or_default(),
+                use_rotation,
+                use_scaling,
+                rotation_range: (-30.0, 30.0),
+                scale_range: (0.8, 1.2),
+                use_random_background,
+                blend_mode,
+            },
+        }
+    }
+
+    /// Apply copy-paste augmentation to image and masks
+    pub fn apply(
+        &self,
+        py: Python<'_>,
+        image: PyReadonlyArray3<u8>,
+        mask: PyReadonlyArray3<u8>,
+        target_mask: PyReadonlyArray3<u8>,
+    ) -> PyResult<(Py<PyArray3<u8>>, Py<PyArray3<u8>>)> {
+        let image_shape = image.shape();
+        let mask_shape = mask.shape();
+        let target_mask_shape = target_mask.shape();
+
+        if image_shape.len() != 3 {
+            return Err(PyValueError::new_err("image must have shape (H, W, C)"));
+        }
+        if mask_shape.len() != 3 {
+            return Err(PyValueError::new_err("mask must have shape (H, W, 1)"));
+        }
+        if target_mask_shape.len() != 3 {
+            return Err(PyValueError::new_err(
+                "target_mask must have shape (H, W, 1)",
+            ));
+        }
+
+        let mut output_image = image.as_array().to_owned();
+        let mask_array = mask.as_array().to_owned();
+        let mut output_mask = target_mask.as_array().to_owned();
+
+        let height = image_shape[0] as u32;
+        let width = image_shape[1] as u32;
+        let config = self.config.clone();
+
+        py.allow_threads(|| {
+            let extracted_objects =
+                objects::extract_objects_from_mask(output_image.view(), mask_array.view());
+
+            let mut objects_by_class: HashMap<u32, Vec<objects::ExtractedObject>> = HashMap::new();
+            for obj in extracted_objects {
+                objects_by_class
+                    .entry(obj.class_id)
+                    .or_insert_with(Vec::new)
+                    .push(obj);
+            }
+
+            let selected_objects = objects::select_objects_by_class(
+                &objects_by_class,
+                &config.object_counts,
+                config.max_paste_objects,
+            );
+
+            let placed_objects = objects::place_objects(
+                &selected_objects,
+                width,
+                height,
+                config.use_rotation,
+                config.use_scaling,
+                config.rotation_range,
+                config.scale_range,
+                0.01,
+            );
+
+            let blend_mode = blending::BlendMode::from_string(&config.blend_mode);
+            objects::compose_objects(&mut output_image, &placed_objects, blend_mode);
+            objects::update_output_mask(&mut output_mask, &placed_objects);
+        });
+
+        Ok((
+            output_image.into_pyarray_bound(py).unbind(),
+            output_mask.into_pyarray_bound(py).unbind(),
+        ))
+    }
+
+    /// Apply augmentation with bounding boxes (Albumentations format)
+    pub fn apply_to_bboxes(
+        &self,
+        py: Python<'_>,
+        bboxes: PyReadonlyArray1<f32>,
+    ) -> PyResult<Py<PyArray1<f32>>> {
+        let bboxes_array = bboxes.as_array().to_owned();
+        // This is a placeholder - in full implementation, would update bboxes based on paste operations
+        Ok(bboxes_array.into_pyarray_bound(py).unbind())
+    }
+
+    /// Get configuration
+    pub fn get_config(&self) -> AugmentationConfig {
+        self.config.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_object_paste_creation() {
+        let obj = ObjectPaste::new(100.0, 100.0, 1.0, 0.0, 0);
+        assert_eq!(obj.x, 100.0);
+        assert_eq!(obj.y, 100.0);
+    }
+
+    #[test]
+    fn test_config_creation() {
+        let config = AugmentationConfig::new(
+            512,
+            512,
+            5,
+            true,
+            true,
+            (-30.0, 30.0),
+            (0.8, 1.2),
+            true,
+            "normal".to_string(),
+            None,
+        );
+        assert_eq!(config.image_width, 512);
+    }
+}
+use crate::blending::{blend_pixel, BlendMode};
+use crate::collision::{check_iou_collision, clip_bbox_to_image};
+/// Object handling for copy-paste augmentation
+/// Includes extraction, selection, and placement logic
+use ndarray::{s, Array3, ArrayView3};
+use rand::Rng;
+use std::collections::HashMap;
+
+/// Represents an extracted object from a mask
+#[derive(Clone, Debug)]
+pub struct ExtractedObject {
+    /// The image patch for this object
+    pub image: Array3<u8>,
+    /// The mask for this object (binary)
+    pub mask: Array3<u8>,
+    /// Bounding box as (x_min, y_min, x_max, y_max) in pixel coordinates
+    pub bbox: (u32, u32, u32, u32),
+    /// Class ID of this object
+    pub class_id: u32,
+}
+
+/// Extract all objects from a mask where each unique non-zero value is an object
+///
+/// # Arguments
+/// * `image` - Source image array (H, W, C)
+/// * `mask` - Mask array (H, W, C) where non-zero values represent objects
+/// * `class_id` - The class ID for all extracted objects
+///
+/// # Returns
+/// Vector of extracted objects
+pub fn extract_objects_from_mask(
+    image: ArrayView3<'_, u8>,
+    mask: ArrayView3<'_, u8>,
+) -> Vec<ExtractedObject> {
+    let mut objects = Vec::new();
+    let shape = image.shape();
+    let (height, width, _channels) = (shape[0], shape[1], shape[2]);
+
+    // Find all non-zero regions in the mask (we'll treat each connected region as an object)
+    // For simplicity, we extract objects based on bounding boxes of non-zero pixels
+
+    let mut visited = vec![vec![false; width]; height];
+
+    for y in 0..height {
+        for x in 0..width {
+            if mask[[y, x, 0]] > 0 && !visited[y][x] {
+                // Found a new object, extract its bounding box
+                let (x_min, y_min, x_max, y_max) = find_object_bounds(&mask, x, y, &mut visited);
+
+                if x_max > x_min && y_max > y_min {
+                    // Extract the patch
+                    if let Some(obj) = extract_object_patch(
+                        &image,
+                        &mask,
+                        x_min as u32,
+                        y_min as u32,
+                        x_max as u32,
+                        y_max as u32,
+                    ) {
+                        objects.push(obj);
+                    }
+                }
+            }
+        }
+    }
+
+    objects
+}
+
+/// Find the bounding box of an object starting from a point
+fn find_object_bounds(
+    mask: &ArrayView3<'_, u8>,
+    start_x: usize,
+    start_y: usize,
+    visited: &mut Vec<Vec<bool>>,
+) -> (usize, usize, usize, usize) {
+    let shape = mask.shape();
+    let (height, width) = (shape[0], shape[1]);
+
+    let mut x_min = start_x;
+    let mut x_max = start_x + 1;
+    let mut y_min = start_y;
+    let mut y_max = start_y + 1;
+
+    // Simple flood fill to find bounds
+    let mut stack = vec![(start_x, start_y)];
+
+    while let Some((x, y)) = stack.pop() {
+        if x >= width || y >= height || visited[y][x] {
+            continue;
+        }
+
+        if mask[[y, x, 0]] == 0 {
+            continue;
+        }
+
+        visited[y][x] = true;
+
+        x_min = x_min.min(x);
+        x_max = x_max.max(x + 1);
+        y_min = y_min.min(y);
+        y_max = y_max.max(y + 1);
+
+        // Check neighbors
+        if x > 0 {
+            stack.push((x - 1, y));
+        }
+        if x < width - 1 {
+            stack.push((x + 1, y));
+        }
+        if y > 0 {
+            stack.push((x, y - 1));
+        }
+        if y < height - 1 {
+            stack.push((x, y + 1));
+        }
+    }
+
+    (x_min, y_min, x_max, y_max)
+}
+
+/// Extract a patch from the image and mask
+fn extract_object_patch(
+    image: &ArrayView3<'_, u8>,
+    mask: &ArrayView3<'_, u8>,
+    x_min: u32,
+    y_min: u32,
+    x_max: u32,
+    y_max: u32,
+) -> Option<ExtractedObject> {
+    let patch_height = (y_max - y_min) as usize;
+    let patch_width = (x_max - x_min) as usize;
+    let channels = image.shape()[2];
+
+    if patch_height == 0 || patch_width == 0 {
+        return None;
+    }
+
+    // Create patch arrays
+    let mut patch_image = Array3::zeros((patch_height, patch_width, channels));
+    let mut patch_mask = Array3::zeros((patch_height, patch_width, channels));
+
+    // Copy data
+    let img_shape = image.shape();
+    let mut class_counts = [0usize; 256];
+
+    for y in 0..patch_height {
+        for x in 0..patch_width {
+            let src_y = (y_min as usize) + y;
+            let src_x = (x_min as usize) + x;
+
+            if src_y < img_shape[0] && src_x < img_shape[1] {
+                let class_value = mask[[src_y, src_x, 0]];
+                if class_value > 0 {
+                    class_counts[class_value as usize] += 1;
+                }
+
+                for c in 0..channels {
+                    patch_image[[y, x, c]] = image[[src_y, src_x, c]];
+                    patch_mask[[y, x, c]] = mask[[src_y, src_x, c]];
+                }
+            }
+        }
+    }
+
+    let mut class_id = 0u32;
+    let mut max_count = 0usize;
+    for (value, count) in class_counts.iter().enumerate() {
+        if value == 0 || *count == 0 {
+            continue;
+        }
+
+        if *count > max_count {
+            max_count = *count;
+            class_id = value as u32;
+        }
+    }
+
+    Some(ExtractedObject {
+        image: patch_image,
+        mask: patch_mask,
+        bbox: (x_min, y_min, x_max, y_max),
+        class_id,
+    })
+}
+
+/// Select objects to paste based on object_counts
+///
+/// # Arguments
+/// * `available_objects` - Vec of extracted objects grouped by class_id
+/// * `object_counts` - HashMap specifying how many objects to paste per class
+///
+/// # Returns
+/// Vector of selected objects ready to paste
+pub fn select_objects_by_class(
+    available_objects: &HashMap<u32, Vec<ExtractedObject>>,
+    object_counts: &HashMap<u32, u32>,
+    max_paste_objects: u32,
+) -> Vec<ExtractedObject> {
+    if max_paste_objects == 0 {
+        return Vec::new();
+    }
+
+    let mut selected = Vec::new();
+    let mut rng = rand::thread_rng();
+    let mut total_selected = 0usize;
+    let global_cap = max_paste_objects as usize;
+
+    for (class_id, count) in object_counts.iter() {
+        if total_selected >= global_cap {
+            break;
+        }
+
+        if let Some(objects) = available_objects.get(class_id) {
+            let remaining_global = global_cap - total_selected;
+            let per_class_cap = (*count as usize).min(objects.len());
+            let count_to_select = per_class_cap.min(remaining_global);
+
+            if count_to_select == 0 {
+                continue;
+            }
+
+            // Random selection without replacement
+            let mut indices: Vec<usize> = (0..objects.len()).collect();
+            for i in 0..count_to_select {
+                let j = i + rng.gen_range(0..(indices.len() - i));
+                indices.swap(i, j);
+                selected.push(objects[indices[i]].clone());
+            }
+
+            total_selected += count_to_select;
+        }
+    }
+
+    selected
+}
+
+/// Represents a placed object with its transformed location
+#[derive(Clone, Debug)]
+pub struct PlacedObject {
+pub struct PlacedObject {
+    /// Transformed bbox as (x_min, y_min, x_max, y_max)
+    pub bbox: (f32, f32, f32, f32),
+    /// The transformed image patch
+    pub image: Array3<u8>,
+    /// The transformed mask patch
+    pub mask: Array3<u8>,
+    /// Class ID
+    pub class_id: u32,
+}
+
+/// Transform a patch using rotation and scaling with bilinear interpolation
+///
+/// # Arguments
+/// * `patch` - The image patch to transform
+/// * `mask` - The mask patch to transform
+/// * `rotation` - Rotation angle in degrees
+/// * `scale` - Scale factor
+///
+/// # Returns
+/// Tuple of (transformed_image, transformed_mask, offset_x, offset_y)
+/// where offset_x/offset_y are the displacement from the patch center
+fn transform_patch(
+    patch: &Array3<u8>,
+    mask: &Array3<u8>,
+    rotation: f32,
+    scale: f32,
+) -> (Array3<u8>, Array3<u8>, f32, f32) {
+    let (height, width, channels) = (patch.shape()[0], patch.shape()[1], patch.shape()[2]);
+
+    if height == 0 || width == 0 {
+        return (patch.clone(), mask.clone(), 0.0, 0.0);
+    }
+
+    // Center of the patch
+    let center_x = (width as f32) / 2.0;
+    let center_y = (height as f32) / 2.0;
+
+    // Convert rotation to radians
+    let rad = rotation * std::f32::consts::PI / 180.0;
+    let cos_a = rad.cos();
+    let sin_a = rad.sin();
+
+    // Calculate transformed corners relative to center
+    let corners = vec![
+        (0.0 - center_x, 0.0 - center_y),
+        (width as f32 - center_x, 0.0 - center_y),
+        (0.0 - center_x, height as f32 - center_y),
+        (width as f32 - center_x, height as f32 - center_y),
+    ];
+
+    let transformed_corners: Vec<(f32, f32)> = corners
+        .iter()
+        .map(|&(x, y)| {
+            let new_x = scale * (cos_a * x - sin_a * y);
+            let new_y = scale * (sin_a * x + cos_a * y);
+            (new_x, new_y)
+        })
+        .collect();
+
+    let min_x = transformed_corners
+        .iter()
+        .map(|p| p.0)
+        .fold(f32::INFINITY, f32::min);
+    let min_y = transformed_corners
+        .iter()
+        .map(|p| p.1)
+        .fold(f32::INFINITY, f32::min);
+    let max_x = transformed_corners
+        .iter()
+        .map(|p| p.0)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let max_y = transformed_corners
+        .iter()
+        .map(|p| p.1)
+        .fold(f32::NEG_INFINITY, f32::max);
+
+    let new_width = ((max_x - min_x).ceil() as usize).max(1);
+    let new_height = ((max_y - min_y).ceil() as usize).max(1);
+
+    let mut output_image = Array3::zeros((new_height, new_width, channels));
+    let mut output_mask = Array3::zeros((new_height, new_width, channels));
+
+    // Inverse transformation parameters
+    let scale_inv = if scale > 1e-6 { 1.0 / scale } else { 1.0 };
+    let cos_a_inv = cos_a;
+    let sin_a_inv = -sin_a;
+
+    // Sample from source patch using bilinear interpolation
+    for y in 0..new_height {
+        for x in 0..new_width {
+            let out_x = (x as f32) + min_x;
+            let out_y = (y as f32) + min_y;
+
+            // Apply inverse transform to find source coordinates
+            let dx = out_x;
+            let dy = out_y;
+            let src_x = scale_inv * (cos_a_inv * dx - sin_a_inv * dy) + center_x;
+            let src_y = scale_inv * (sin_a_inv * dx + cos_a_inv * dy) + center_y;
+
+            // Bilinear interpolation
+            if src_x >= 0.0
+                && src_x < (width as f32 - 1e-6)
+                && src_y >= 0.0
+                && src_y < (height as f32 - 1e-6)
+            {
+                let x0 = src_x.floor() as usize;
+                let y0 = src_y.floor() as usize;
+                let x1 = (x0 + 1).min(width - 1);
+                let y1 = (y0 + 1).min(height - 1);
+
+                let fx = src_x - x0 as f32;
+                let fy = src_y - y0 as f32;
+
+                for c in 0..channels {
+                    let v00 = patch[[y0, x0, c]] as f32;
+                    let v10 = patch[[y0, x1, c]] as f32;
+                    let v01 = patch[[y1, x0, c]] as f32;
+                    let v11 = patch[[y1, x1, c]] as f32;
+
+                    let v0 = v00 * (1.0 - fx) + v10 * fx;
+                    let v1 = v01 * (1.0 - fx) + v11 * fx;
+                    let v = v0 * (1.0 - fy) + v1 * fy;
+
+                    output_image[[y, x, c]] = v.round() as u8;
+
+                    // Same for mask
+                    let m00 = mask[[y0, x0, c]] as f32;
+                    let m10 = mask[[y0, x1, c]] as f32;
+                    let m01 = mask[[y1, x0, c]] as f32;
+                    let m11 = mask[[y1, x1, c]] as f32;
+
+                    let m0 = m00 * (1.0 - fx) + m10 * fx;
+                    let m1 = m01 * (1.0 - fx) + m11 * fx;
+                    let m = m0 * (1.0 - fy) + m1 * fy;
+
+                    output_mask[[y, x, c]] = (m.round() as u8).max(if m > 127.5 { 255 } else { 0 });
+                }
+            }
+        }
+    }
+
+    // Return transformed patches and offset
+    let offset_x = min_x;
+    let offset_y = min_y;
+
+    (output_image, output_mask, offset_x, offset_y)
+}
+
+/// Place objects onto target image with collision detection
+///
+/// # Arguments
+/// * `selected_objects` - Objects to place
+/// * `image_width` - Target image width
+/// * `image_height` - Target image height
+/// * `use_rotation` - Whether to apply random rotation
+/// * `use_scaling` - Whether to apply random scaling
+/// * `rotation_range` - (min, max) rotation in degrees
+/// * `scale_range` - (min, max) scale factors
+/// * `collision_threshold` - IoU threshold for collision detection (0.0 = no collision)
+///
+/// # Returns
+/// Vector of successfully placed objects with their transformed bboxes
+pub fn place_objects(
+    selected_objects: &[ExtractedObject],
+    image_width: u32,
+    image_height: u32,
+    use_rotation: bool,
+    use_scaling: bool,
+    rotation_range: (f32, f32),
+    scale_range: (f32, f32),
+    collision_threshold: f32,
+) -> Vec<PlacedObject> {
+    let mut placed: Vec<PlacedObject> = Vec::new();
+    let mut rng = rand::thread_rng();
+
+    for obj in selected_objects {
+        // Random center position within image bounds based on original patch size
+        let obj_width = (obj.bbox.2 - obj.bbox.0) as f32;
+        let obj_height = (obj.bbox.3 - obj.bbox.1) as f32;
+
+        let image_width_f = image_width as f32;
+        let image_height_f = image_height as f32;
+
+        if image_width_f < obj_width || image_height_f < obj_height {
+            continue; // Object too large for image
+        }
+
+        let half_width = obj_width / 2.0;
+        let half_height = obj_height / 2.0;
+
+        let center_x_min = half_width;
+        let center_x_max = image_width_f - half_width;
+        let center_y_min = half_height;
+        let center_y_max = image_height_f - half_height;
+
+        let center_x = if (center_x_max - center_x_min).abs() <= f32::EPSILON {
+            center_x_min
+        } else {
+            rng.gen_range(center_x_min..=center_x_max)
+        };
+
+        let center_y = if (center_y_max - center_y_min).abs() <= f32::EPSILON {
+            center_y_min
+        } else {
+            rng.gen_range(center_y_min..=center_y_max)
+        };
+
+        // Random transformation parameters
+        let rotation = if use_rotation {
+            rng.gen_range(rotation_range.0..=rotation_range.1)
+        } else {
+            0.0
+        };
+
+        let scale = if use_scaling {
+            rng.gen_range(scale_range.0..=scale_range.1)
+        } else {
+            1.0
+        };
+
+        // Apply rotation and scaling transformation to the patch
+        let (mut transformed_image, mut transformed_mask, offset_x, offset_y) =
+            if rotation != 0.0 || (scale - 1.0).abs() > 1e-6 {
+                transform_patch(&obj.image, &obj.mask, rotation, scale)
+            } else {
+                (
+                    obj.image.clone(),
+                    obj.mask.clone(),
+                    -half_width,
+                    -half_height,
+                )
+            };
+
+        let patch_width = transformed_image.shape()[1] as f32;
+        let patch_height = transformed_image.shape()[0] as f32;
+
+        let raw_bbox = (
+            center_x + offset_x,
+            center_y + offset_y,
+            center_x + offset_x + patch_width,
+            center_y + offset_y + patch_height,
+        );
+
+        let clipped_bbox = clip_bbox_to_image(raw_bbox, image_width, image_height);
+
+        // Calculate how much of the transformed patch lies inside the image
+        let trim_left = (clipped_bbox.0 - raw_bbox.0).max(0.0);
+        let trim_top = (clipped_bbox.1 - raw_bbox.1).max(0.0);
+        let trim_right = (raw_bbox.2 - clipped_bbox.2).max(0.0);
+        let trim_bottom = (raw_bbox.3 - clipped_bbox.3).max(0.0);
+
+        let src_width = transformed_image.shape()[1];
+        let src_height = transformed_image.shape()[0];
+
+        let x_start = trim_left.round().clamp(0.0, src_width as f32) as usize;
+        let y_start = trim_top.round().clamp(0.0, src_height as f32) as usize;
+        let x_end = src_width.saturating_sub(trim_right.round() as usize);
+        let y_end = src_height.saturating_sub(trim_bottom.round() as usize);
+
+        if x_start >= x_end || y_start >= y_end {
+            continue; // Patch lies completely outside the image
+        }
+
+        // Crop the patch to the visible region
+        transformed_image = transformed_image
+            .slice(s![y_start..y_end, x_start..x_end, ..])
+            .to_owned();
+        transformed_mask = transformed_mask
+            .slice(s![y_start..y_end, x_start..x_end, ..])
+            .to_owned();
+
+        let cropped_width = transformed_image.shape()[1] as f32;
+        let cropped_height = transformed_image.shape()[0] as f32;
+
+        let final_x_min = (raw_bbox.0 + x_start as f32).clamp(0.0, image_width_f);
+        let final_y_min = (raw_bbox.1 + y_start as f32).clamp(0.0, image_height_f);
+        let final_x_max = (final_x_min + cropped_width).min(image_width_f);
+        let final_y_max = (final_y_min + cropped_height).min(image_height_f);
+
+        if final_x_max - final_x_min <= 0.0 || final_y_max - final_y_min <= 0.0 {
+            continue;
+        }
+
+        let final_bbox = (final_x_min, final_y_min, final_x_max, final_y_max);
+
+        // Check for collisions with already-placed objects using the final bbox
+        let mut has_collision = false;
+        for placed_obj in &placed {
+            if check_iou_collision(final_bbox, placed_obj.bbox, collision_threshold) {
+                has_collision = true;
+                break;
+            }
+        }
+
+        if has_collision {
+            continue; // Skip this object due to collision
+        }
+
+        let placed_obj = PlacedObject {
+            bbox: final_bbox,
+            image: transformed_image,
+            mask: transformed_mask,
+            class_id: obj.class_id,
+        };
+
+        placed.push(placed_obj);
+    }
+
+    placed
+}
+
+/// Compose placed objects onto target image with blending
+///
+/// # Arguments
+/// * `output_image` - Target image to paste objects onto
+/// * `placed_objects` - Objects to paste
+/// * `blend_mode` - Blending mode to use
+///
+/// # Returns
+/// Modified image with objects blended on
+pub fn compose_objects(
+    output_image: &mut Array3<u8>,
+    placed_objects: &[PlacedObject],
+    blend_mode: BlendMode,
+) {
+    let out_shape = output_image.shape();
+    let (height, width, channels) = (out_shape[0], out_shape[1], out_shape[2]);
+
+    for placed_obj in placed_objects {
+        let (x_min_f, y_min_f, _, _) = placed_obj.bbox;
+        let x_min = x_min_f.floor().max(0.0) as usize;
+        let y_min = y_min_f.floor().max(0.0) as usize;
+
+        if x_min >= width || y_min >= height {
+            continue;
+        }
+
+        let obj_shape = placed_obj.image.shape();
+        let patch_height = obj_shape[0];
+        let patch_width = obj_shape[1];
+
+        if patch_height == 0 || patch_width == 0 {
+            continue;
+        }
+
+        let y_max = (y_min + patch_height).min(height);
+        let x_max = (x_min + patch_width).min(width);
+
+        let target_height = y_max.saturating_sub(y_min);
+        let target_width = x_max.saturating_sub(x_min);
+
+        if target_width == 0 || target_height == 0 {
+            continue;
+        }
+
+        // Blend the object patch onto the output image
+        // Using the mask to determine alpha blending
+        for py in 0..target_height {
+            for px in 0..target_width {
+                let target_y = y_min + py;
+                let target_x = x_min + px;
+
+                if target_y >= height || target_x >= width {
+                    continue;
+                }
+
+                // Use mask to determine if pixel should be blended
+                let mask_value = placed_obj.mask[[py, px, 0]];
+                if mask_value == 0 {
+                    continue; // Skip transparent pixels
+                }
+
+                let alpha = (mask_value as f32) / 255.0;
+
+                // Blend each channel
+                for c in 0..channels {
+                    let base_pixel = output_image[[target_y, target_x, c]];
+                    let overlay_pixel = placed_obj.image[[py, px, c]];
+
+                    let blended = blend_pixel(base_pixel, overlay_pixel, alpha, blend_mode);
+use ndarray::Array2;
+use std::f32::consts::PI;
+
+/// Represents an affine transformation matrix and its parameters
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub struct AffineTransform {
+    /// 2x3 affine transformation matrix
+    pub matrix: Array2<f32>,
+    pub rotation: f32,
+    pub scale: f32,
+    pub tx: f32,
+    pub ty: f32,
+}
+
+impl AffineTransform {
+    /// Create a new affine transformation
+    #[allow(dead_code)]
+    pub fn new(rotation: f32, scale: f32, tx: f32, ty: f32) -> Self {
+        let matrix = create_affine_matrix(rotation, scale, tx, ty);
+        AffineTransform {
+            matrix,
+            rotation,
+            scale,
+            tx,
+            ty,
+        }
+    }
+
+    /// Create identity transformation
+    #[allow(dead_code)]
+    pub fn identity() -> Self {
+        AffineTransform {
+            matrix: Array2::from_shape_fn((2, 3), |(i, j)| {
+                if i == j {
+                    1.0
+                } else if i == 1 && j == 2 {
+                    0.0
+                } else {
+                    0.0
+                }
+            }),
+            rotation: 0.0,
+            scale: 1.0,
+            tx: 0.0,
+            ty: 0.0,
+        }
+    }
+}
+
+/// Create a 2x3 affine transformation matrix
+#[allow(dead_code)]
+fn create_affine_matrix(rotation: f32, scale: f32, tx: f32, ty: f32) -> Array2<f32> {
+    let rad = rotation * PI / 180.0;
+    let cos_a = rad.cos();
+    let sin_a = rad.sin();
+
+    let mut matrix = Array2::zeros((2, 3));
+
+    // Rotation and scaling
+    matrix[[0, 0]] = scale * cos_a;
+    matrix[[0, 1]] = -scale * sin_a;
+    matrix[[1, 0]] = scale * sin_a;
+    matrix[[1, 1]] = scale * cos_a;
+
+    // Translation
+    matrix[[0, 2]] = tx;
+    matrix[[1, 2]] = ty;
+
+    matrix
+}
+
+/// Apply affine transformation to a point
+#[allow(dead_code)]
+pub fn apply_affine_transform(point: (f32, f32), transform: &AffineTransform) -> (f32, f32) {
+    let x = point.0;
+    let y = point.1;
+    let m = &transform.matrix;
+
+    let new_x = m[[0, 0]] * x + m[[0, 1]] * y + m[[0, 2]];
+    let new_y = m[[1, 0]] * x + m[[1, 1]] * y + m[[1, 2]];
+
+    (new_x, new_y)
+}
+
+/// Get the inverse affine transformation
+#[allow(dead_code)]
+pub fn invert_affine(transform: &AffineTransform) -> AffineTransform {
+    let m = &transform.matrix;
+
+    // Calculate determinant of 2x2 rotation/scale matrix
+    let det = m[[0, 0]] * m[[1, 1]] - m[[0, 1]] * m[[1, 0]];
+
+    if det.abs() < 1e-10 {
+        return AffineTransform::identity();
+    }
+
+    // Create inverse matrix
+    let mut inv_m = Array2::zeros((2, 3));
+
+    // Inverse rotation/scale matrix
+    inv_m[[0, 0]] = m[[1, 1]] / det;
+    inv_m[[0, 1]] = -m[[0, 1]] / det;
+    inv_m[[1, 0]] = -m[[1, 0]] / det;
+    inv_m[[1, 1]] = m[[0, 0]] / det;
+
+    // Inverse translation
+    inv_m[[0, 2]] = -(inv_m[[0, 0]] * m[[0, 2]] + inv_m[[0, 1]] * m[[1, 2]]);
+    inv_m[[1, 2]] = -(inv_m[[1, 0]] * m[[0, 2]] + inv_m[[1, 1]] * m[[1, 2]]);
+
+    AffineTransform {
+        matrix: inv_m,
+        rotation: -transform.rotation,
+        scale: 1.0 / transform.scale,
+        tx: transform.tx,
+        ty: transform.ty,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_identity_transform() {
+        let t = AffineTransform::identity();
+        let point = (10.0, 20.0);
+        let (x, y) = apply_affine_transform(point, &t);
+        assert!((x - 10.0).abs() < 1e-5);
+        assert!((y - 20.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_translation() {
+        let t = AffineTransform::new(0.0, 1.0, 5.0, 10.0);
+        let point = (0.0, 0.0);
+        let (x, y) = apply_affine_transform(point, &t);
+        assert!((x - 5.0).abs() < 1e-5);
+        assert!((y - 10.0).abs() < 1e-5);
+    }
+}
+"""Albumentations-compatible copy-paste augmentation using Rust implementation."""
+
+from typing import Any
+
+import albumentations as A
+import numpy as np
+from loguru import logger
+
+try:
+    from copy_paste._core import CopyPasteTransform
+    RUST_AVAILABLE = True
+except ImportError:
+    logger.warning("copy_paste Rust module not available. Build with: maturin develop")
+    RUST_AVAILABLE = False
+
+
+class CopyPasteAugmentation(A.DualTransform):
+    """Copy-paste augmentation using Rust implementation with Albumentations interface.
+
+    This transform applies copy-paste augmentation to images and masks, utilizing
+    a Rust implementation for high performance. It maintains full compatibility with
+    Albumentations' DualTransform interface.
+
+    Args:
+        image_width: Width of output images (default: 512)
+        image_height: Height of output images (default: 512)
+        max_paste_objects: Maximum number of objects to paste per image (default: 1)
+        use_rotation: Whether to apply random rotation (default: True)
+        use_scaling: Whether to apply random scaling (default: True)
+        rotation_range: Range of rotation in degrees (min, max). Default: (-30.0, 30.0)
+        scale_range: Range of scaling factors (min, max). Default: (0.8, 1.2)
+        use_random_background: Whether to generate random background (default: False)
+        blend_mode: Blending mode ('normal' or 'xray'). Default: 'normal'
+        object_counts: Dictionary mapping class names (str) to exact count of objects
+                      to paste per class. Example: {'person': 2, 'car': 1}
+                      (default: {})
+        p: Probability of applying the transform (0.0 to 1.0) (default: 1.0)
+
+    Example:
+        >>> transform = CopyPasteAugmentation(
+        ...     image_width=512,
+        ...     image_height=512,
+        ...     object_counts={'person': 2, 'car': 1},
+        ...     use_rotation=True,
+        ...     use_scaling=True
+        ... )
+        >>> augmented = transform(image=img, mask=mask)
+    """
+
+    def __init__(
+        self,
+        image_width: int = 512,
+        image_height: int = 512,
+        max_paste_objects: int = 1,
+        use_rotation: bool = True,
+        use_scaling: bool = True,
+        rotation_range: tuple[float, float] = (-30.0, 30.0),
+        scale_range: tuple[float, float] = (0.8, 1.2),
+        use_random_background: bool = False,
+        blend_mode: str = "normal",
+        object_counts: dict[str, int] | None = None,
+        p: float = 1.0,
+    ):
+        """Initialize the CopyPasteAugmentation transform.
+
+        Args:
+            object_counts: Optional dict mapping class names (str) to exact number of objects
+                          to paste per class. Example: {'person': 2, 'car': 1}
+                          If None, no per-class count constraint is applied.
+        """
+        super().__init__(p=p)
+
+        if not RUST_AVAILABLE:
+            raise RuntimeError(
+                "Rust implementation not available. "
+                "Build with: pip install -e . or maturin develop"
+            )
+
+        self.image_width = image_width
+        self.image_height = image_height
+        self.max_paste_objects = max_paste_objects
+        self.use_rotation = use_rotation
+        self.use_scaling = use_scaling
+        self.rotation_range = rotation_range
+        self.scale_range = scale_range
+        self.use_random_background = use_random_background
+        self.blend_mode = blend_mode
+        self.object_counts = object_counts or {}
+        self._last_mask_output: np.ndarray | None = None
+
+        # Initialize Rust transform
+        self.rust_transform = CopyPasteTransform(
+            image_width=image_width,
+            image_height=image_height,
+            max_paste_objects=max_paste_objects,
+            use_rotation=use_rotation,
+            use_scaling=use_scaling,
+            use_random_background=use_random_background,
+            blend_mode=blend_mode,
+            object_counts=self.object_counts if self.object_counts else None,
+        )
+
+        logger.info(
+            f"Initialized CopyPasteAugmentation | "
+            f"size=({image_width}x{image_height}), "
+            f"max_objects={max_paste_objects}, "
+            f"rotation={use_rotation}, scaling={use_scaling}"
+        )
+
+    def apply(
+        self,
+        img: np.ndarray,
+        **params: Any,
+    ) -> np.ndarray:
+        """Apply copy-paste augmentation to image.
+
+        Args:
+            img: Input image as numpy array (H, W, C) in BGR format
+
+        Returns:
+            Augmented image
+        """
+        # Convert to uint8 if needed
+        if img.dtype != np.uint8:
+            img = (img * 255).astype(np.uint8) if img.max() <= 1.0 else img.astype(np.uint8)
+
+        # Ensure image is BGR
+        if img.ndim != 3 or img.shape[2] != 3:
+            raise ValueError(f"Expected BGR image (H, W, 3), got shape {img.shape}")
+
+        # Call Rust implementation
+        # Note: The Rust apply() method currently returns data unchanged
+        # Full implementation would perform the copy-paste operations
+        try:
+            source_mask = self._prepare_mask(params.get("mask"), img.shape[0], img.shape[1])
+            target_mask = self._prepare_mask(params.get("target_mask"), img.shape[0], img.shape[1])
+
+            augmented_image, augmented_mask = self.rust_transform.apply(
+                np.ascontiguousarray(img),
+                source_mask,
+                target_mask,
+            )
+            self._last_mask_output = self._normalize_mask_output(
+                augmented_mask, params.get("mask")
+            )
+            return augmented_image
+        except Exception as e:
+            logger.warning(f"Rust augmentation failed: {e}, returning original image")
+            self._last_mask_output = None
+            return img
+
+    def apply_to_masks(
+        self,
+        masks: list[np.ndarray],
+        **params: Any,
+    ) -> list[np.ndarray]:
+        """Apply transformations to masks.
+
+        Args:
+            masks: List of binary masks (each H x W)
+
+        Returns:
+            Transformed masks
+        """
+        # Masks are typically modified during copy-paste to reflect new object positions
+        # For now, return unchanged as the Rust implementation needs full algorithm
+        # In production: convert masks to Rust format, apply transformations, convert back
+        if not masks:
+            return masks
+
+        return [self.apply_to_mask(mask, **params) for mask in masks]
+
+    def apply_to_mask(
+        self,
+        mask: np.ndarray,
+        **params: Any,
+    ) -> np.ndarray:
+        """Return mask output from Rust if available, otherwise sanitize input mask."""
+        mask = self._ensure_uint8(mask)
+
+        if mask.ndim != 2:
+            raise ValueError(f"Expected 2D mask, got shape {mask.shape}")
+
+        if self._last_mask_output is not None:
+            target_shape = (int(mask.shape[0]), int(mask.shape[1]))
+            output = self._resize_mask_if_needed(self._last_mask_output, target_shape)
+            self._last_mask_output = None
+            return output
+
+        return mask
+
+    def apply_to_bboxes(
+        self,
+        bboxes: np.ndarray,
+        **params: Any,
+    ) -> np.ndarray:
+        """Apply transformations to bounding boxes.
+
+        Args:
+            bboxes: Bounding boxes in normalized format [x_min, y_min, x_max, y_max, class_label]
+                   Values should be in range [0, 1]
+
+        Returns:
+            Transformed bounding boxes in same format
+        """
+        if len(bboxes) == 0:
+            return bboxes
+
+        # Validate input format
+        if bboxes.shape[1] < 4:
+            raise ValueError(
+                f"Bboxes must have at least 4 columns [x_min, y_min, x_max, y_max], got {bboxes.shape}"
+            )
+
+        # For copy-paste: bboxes may be added/removed/moved based on pasted objects
+        # The actual transformation happens in the Rust layer
+        # Currently returns unchanged bboxes
+        try:
+            # Convert normalized coords to pixel coords for Rust
+            pixel_bboxes = bboxes.copy()
+            pixel_bboxes[:, 0] *= self.image_width  # x_min
+            pixel_bboxes[:, 1] *= self.image_height  # y_min
+            pixel_bboxes[:, 2] *= self.image_width  # x_max
+            pixel_bboxes[:, 3] *= self.image_height  # y_max
+
+            # Call Rust transformation
+            transformed = self.rust_transform.apply_to_bboxes(pixel_bboxes[:, :4].astype(np.float32))
+
+            # Convert back to normalized coords
+            result = bboxes.copy()
+            if len(transformed) > 0:
+                result[:, 0] = transformed[:, 0] / self.image_width
+                result[:, 1] = transformed[:, 1] / self.image_height
+                result[:, 2] = transformed[:, 2] / self.image_width
+                result[:, 3] = transformed[:, 3] / self.image_height
+
+            return result
+        except Exception as e:
+            logger.warning(f"Bbox transformation failed: {e}, returning original bboxes")
+            return bboxes
+
+    @staticmethod
+    def _ensure_uint8(array: np.ndarray) -> np.ndarray:
+        if array.dtype == np.uint8:
+            return array
+        if array.max(initial=0) <= 1.0:
+            return (array * 255).astype(np.uint8)
+        return array.astype(np.uint8)
+
+    def _prepare_mask(self, mask: np.ndarray | None, height: int, width: int) -> np.ndarray:
+        if mask is None:
+            return np.zeros((height, width, 1), dtype=np.uint8)
+
+        mask_uint8 = self._ensure_uint8(mask)
+
+        if mask_uint8.ndim == 2:
+            mask_uint8 = mask_uint8[..., None]
+        elif mask_uint8.ndim == 3 and mask_uint8.shape[2] > 1:
+            mask_uint8 = mask_uint8[..., :1]
+
+"""Tests for Albumentations-compatible CopyPasteAugmentation transform."""
+
+import numpy as np
+import pytest
+
+try:
+    import albumentations as A
+except ImportError:
+    pytest.skip("albumentations not installed", allow_module_level=True)
+
+from copy_paste import CopyPasteAugmentation, SimpleCopyPaste
+
+
+@pytest.fixture
+def sample_transform():
+    """Create a basic CopyPasteAugmentation transform."""
+    return CopyPasteAugmentation(
+        image_width=512,
+        image_height=512,
+        max_paste_objects=1,
+        use_rotation=False,
+        use_scaling=False,
+        use_random_background=False,
+        p=1.0,
+    )
+
+
+@pytest.fixture
+def sample_image():
+    """Create a sample image for testing."""
+    return np.random.randint(0, 255, (512, 512, 3), dtype=np.uint8)
+
+
+@pytest.fixture
+def sample_bboxes():
+    """Create sample bounding boxes in Albumentations format.
+
+    Format: [x_min, y_min, x_max, y_max, class_label]
+    Values are normalized (0-1)
+    """
+    return np.array([
+        [0.1, 0.1, 0.3, 0.3, 0],  # Class 0
+        [0.5, 0.5, 0.7, 0.7, 1],  # Class 1
+    ])
+
+
+@pytest.fixture
+def sample_masks():
+    """Create sample masks as a list of binary arrays."""
+    return [
+        np.zeros((512, 512), dtype=np.uint8),  # First mask (all zeros)
+        np.zeros((512, 512), dtype=np.uint8),  # Second mask (all zeros)
+    ]
+
+
+def test_transform_initialization(sample_transform):
+    """Test that transform initializes correctly."""
+    assert sample_transform.image_width == 512
+    assert sample_transform.image_height == 512
+    assert sample_transform.max_paste_objects == 1
+    assert sample_transform.p == 1.0
+
+
+def test_transform_is_dual_transform(sample_transform):
+    """Test that transform inherits from DualTransform."""
+    assert isinstance(sample_transform, A.DualTransform)
+
+
+def test_apply_basic_image(sample_transform, sample_image):
+    """Test that apply method works with basic image."""
+    result = sample_transform.apply(sample_image)
+    assert result.shape == sample_image.shape
+    assert result.dtype == sample_image.dtype
+
+
+def test_apply_to_bboxes(sample_transform, sample_bboxes):
+    """Test that apply_to_bboxes method works."""
+    result = sample_transform.apply_to_bboxes(sample_bboxes)
+    assert result.shape == sample_bboxes.shape
+    np.testing.assert_array_equal(result, sample_bboxes)
+
+
+def test_apply_to_masks(sample_transform, sample_masks):
+    """Test that apply_to_masks method works."""
+    result = sample_transform.apply_to_masks(sample_masks)
+    assert len(result) == len(sample_masks)
+
+
+def test_full_transform_call(sample_transform, sample_image):
+    """Test full transform call with Albumentations interface."""
+    data = {
+        "image": sample_image,
+        "bboxes": np.array([[0.1, 0.1, 0.3, 0.3, 0]]),
+        "masks": [np.zeros((512, 512), dtype=np.uint8)],
+    }
+
+    # Transform should handle the data through __call__
+    transform_instance = sample_transform
+    # We can't call the transform directly like Albumentations
+    # because it's missing the full implementation, but we can call apply
+    result = transform_instance.apply(data["image"])
+    assert result.shape == sample_image.shape
+
+
+def test_simple_copy_paste_alias():
+    """Test that SimpleCopyPaste alias works."""
+    transform = SimpleCopyPaste(
+        image_width=256,
+        image_height=256,
+        max_paste_objects=1,
+        p=1.0,
+    )
+    assert isinstance(transform, CopyPasteAugmentation)
+
+
+def test_transform_with_different_sizes():
+    """Test transform with various image sizes."""
+    sizes = [(256, 256), (512, 512), (1024, 1024)]
+
+    for height, width in sizes:
+        transform = CopyPasteAugmentation(
+            image_width=width,
+            image_height=height,
+            p=1.0,
+        )
+        image = np.random.randint(0, 255, (height, width, 3), dtype=np.uint8)
+        result = transform.apply(image)
+        assert result.shape == image.shape
+
+
+def test_transform_probability_zero():
+    """Test that transform with p=0 doesn't apply."""
+    transform = CopyPasteAugmentation(
+        image_width=512,
+        image_height=512,
+        p=0.0,  # Never apply
+    )
+
+    image = np.ones((512, 512, 3), dtype=np.uint8) * 100
+    # When p=0, the transform's __call__ should not modify the image
+    # For now, we're just testing that it doesn't error
+
+
+def test_transform_with_rotation():
+    """Test transform with rotation enabled."""
+    transform = CopyPasteAugmentation(
+        image_width=512,
+        image_height=512,
+        use_rotation=True,
+        rotation_range=(-45.0, 45.0),
+        p=1.0,
+    )
+
+    image = np.random.randint(0, 255, (512, 512, 3), dtype=np.uint8)
+    result = transform.apply(image)
+    assert result.shape == image.shape
+
+
+def test_transform_with_scaling():
+    """Test transform with scaling enabled."""
+    transform = CopyPasteAugmentation(
+        image_width=512,
+        image_height=512,
+        use_scaling=True,
+        scale_range=(0.8, 1.2),
+        p=1.0,
+    )
+
+    image = np.random.randint(0, 255, (512, 512, 3), dtype=np.uint8)
+    result = transform.apply(image)
+    assert result.shape == image.shape
+
+
+def test_transform_with_random_background():
+    """Test transform with random background generation."""
+    transform = CopyPasteAugmentation(
+        image_width=512,
+        image_height=512,
+        use_random_background=True,
+        p=1.0,
+    )
+
+    image = np.ones((512, 512, 3), dtype=np.uint8) * 50
+    result = transform.apply(image)
+    assert result.shape == image.shape
+
+
+def test_transform_different_blend_modes():
+    """Test transform with different blend modes."""
+    modes = ["normal", "xray"]
+
+    for blend_mode in modes:
+        transform = CopyPasteAugmentation(
+            image_width=512,
+            image_height=512,
+            blend_mode=blend_mode,
+            p=1.0,
+        )
+
+        image = np.random.randint(0, 255, (512, 512, 3), dtype=np.uint8)

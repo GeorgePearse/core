@@ -1,0 +1,134 @@
+.pareto-front-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.pareto-front-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+
+.pareto-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.pareto-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pareto-control-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  min-width: 50px;
+}
+
+.pareto-control-group select {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  color: #495057;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.pareto-control-group select:hover {
+  border-color: #adb5bd;
+}
+
+.pareto-control-group select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.objective-toggle {
+  display: flex;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.objective-toggle button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: white;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.objective-toggle button:first-child {
+  border-right: 1px solid #ced4da;
+}
+
+.objective-toggle button:hover {
+  background: #f8f9fa;
+}
+
+.objective-toggle button.active {
+  background: #e58e26;
+  color: white;
+}
+
+.pareto-stats {
+  display: flex;
+  justify-content: flex-end;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.pareto-stats span {
+  background: #f1f3f4;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.pareto-chart-container {
+  flex: 1;
+  min-height: 300px;
+  position: relative;
+}
+
+/* Ensure Plotly chart fills the container */
+.pareto-chart-container .js-plotly-plot,
+.pareto-chart-container .plotly {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .pareto-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pareto-control-group {
+    flex-wrap: wrap;
+  }
+
+  .pareto-control-group select {
+    min-width: 100px;
+  }
+}

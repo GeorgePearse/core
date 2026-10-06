@@ -1,0 +1,35 @@
+# SAGA-Inspired Objective Evolution Configuration Example
+# This demonstrates how future objective evolution feature could be configured
+
+defaults:
+  - /task@_here_: circle_packing
+
+evolution:
+  num_generations: 200
+
+  # Meta-summarizer configuration (SAGA Analyzer/Planner)
+  meta_rec_interval: 25
+  meta_llm_models:
+    - "azure-gpt-4.1"  # Stronger model for meta-analysis
+
+  # Future: Objective evolution configuration
+  # (Not yet implemented - see docs/saga_integration.md)
+  # objective_evolution_enabled: true
+  # objective_evolution_interval: 50
+  # objective_base_metrics:
+  #   - sum_radii
+  #   - variance_penalty
+  #   - min_radius_score
+  #   - symmetry_score
+  # objective_initial_weights:
+  #   sum_radii: 0.7
+  #   variance_penalty: 0.1
+  #   min_radius_score: 0.1
+  #   symmetry_score: 0.1
+
+database:
+  # Track objective evolution history
+  # track_objective_versions: true
+
+# NOTE: This config shows the vision for SAGA integration.
+# Current Genesis uses fixed combined_score from evaluate.py

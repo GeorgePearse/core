@@ -1,0 +1,22 @@
+/* Custom styling for repo titles in TEST_REPOS_SUMMARY.md */
+
+/* Style repo titles (h3 > strong elements) with blue default and orange on hover */
+h3 strong {
+    color: #2196F3; /* Blue by default */
+    transition: color 0.3s ease;
+}
+
+h3 strong:hover {
+    color: #FF9800; /* Orange on hover */
+}
+
+/* Alternative selector if titles are direct h3 text nodes with bold wrapper */
+h3 > strong {
+    cursor: pointer;
+    display: inline-block;
+}
+
+/* Ensure smooth transitions on all interactive elements */
+h3 strong {
+    will-change: color;
+}

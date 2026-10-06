@@ -1,0 +1,119 @@
+name: "Behavioral Rules"
+description: "Tests for agent behavioral requirements from CLAUDE.md"
+instructions_version: "main"
+model_under_test: "claude-3-5-sonnet-20250109"
+metadata:
+  instruction_file: "/home/georgepearse/CLAUDE.md"
+
+test_cases:
+  - description: "Should test all generated code"
+    task: |
+      Implement a function that validates email addresses.
+      Make sure to include tests for it.
+    assertions:
+      - type: must_contain
+        target: generated_code
+        description: "Should include test code"
+        pattern: "def test_"
+        severity: error
+
+      - type: must_contain
+        target: full_response
+        description: "Should mention testing approach"
+        pattern: "test"
+        severity: error
+
+      - type: llm_judge
+        target: full_response
+        description: "Tests are comprehensive and cover edge cases"
+        severity: warning
+        metadata:
+          judge_prompt: |
+            Does this response include comprehensive tests that cover:
+            1. Valid email addresses
+            2. Invalid email addresses
+            3. Edge cases (empty, special chars, etc.)
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.6
+
+  - description: "Should provide working code, not theoretical explanations"
+    task: |
+      I need a function to parse CSV files and return them as dictionaries.
+      Please provide the complete, working implementation.
+    assertions:
+      - type: must_contain
+        target: generated_code
+        description: "Should provide actual code blocks"
+        pattern: "def "
+        severity: error
+
+      - type: regex_match
+        target: full_response
+        description: "Should not rely only on explanations"
+        pattern: "```python"
+        severity: error
+
+      - type: llm_judge
+        target: generated_code
+        description: "Code is production-ready and not pseudocode"
+        severity: error
+        metadata:
+          judge_prompt: |
+            Is this actual, runnable Python code that could be used in production?
+            Not pseudocode, scaffolding, or placeholder code.
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.8
+
+  - description: "Should commit after significant changes"
+    task: |
+      Add a new feature to a Python project. What should I do after implementing it?
+    assertions:
+      - type: must_contain
+        target: full_response
+        description: "Should mention git commits"
+        pattern: "git commit"
+        severity: warning
+
+      - type: must_contain
+        target: full_response
+        description: "Should mention running tests"
+        pattern: "test"
+        severity: warning
+
+      - type: must_contain
+        target: full_response
+        description: "Should mention pre-commit hooks"
+        pattern: "pre-commit"
+        severity: warning
+
+      - type: llm_judge
+        target: full_response
+        description: "Mentions proper development workflow"
+        severity: warning
+        metadata:
+          judge_prompt: |
+            Does the response describe a professional development workflow?
+            Including code review, testing, and commit practices?
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.7
+
+  - description: "Should provide detailed error messages and help"
+    task: |
+      I'm getting an import error in my Python code. Can you help me debug it?
+    assertions:
+      - type: must_contain
+        target: full_response
+        description: "Should ask for error details"
+        pattern: "error"
+        severity: warning
+
+      - type: llm_judge
+        target: full_response
+        description: "Response is helpful and diagnostic"
+        severity: warning
+        metadata:
+          judge_prompt: |
+            Is this response helpful for someone debugging an import error?
+            Does it ask clarifying questions and provide diagnostic steps?
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.7

@@ -1,0 +1,1856 @@
+diff --git a/src/bin/cli.rs b/src/bin/cli.rs
+index 83198cf..64eb502 100644
+--- a/src/bin/cli.rs
++++ b/src/bin/cli.rs
+@@ -17,12 +17,12 @@
+ use anyhow::Context;
+ use clap::{ArgAction, Parser, Subcommand};
+ use encoding_rs::{Encoding, UTF_16BE, UTF_16LE, UTF_8};
+-use similar::TextDiff;
+-use globset::{Glob, GlobSet, GlobSetBuilder};
++use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
+ use num_cpus;
+ use rayon::prelude::*;
+ use rayon::ThreadPoolBuilder;
+ use serde::{Deserialize, Serialize};
++use similar::TextDiff;
+ use std::borrow::Cow;
+ use std::collections::{BTreeMap, HashMap};
+ use std::ffi::OsString;
+@@ -105,6 +105,18 @@ enum Commands {
+         /// Limit parallel workers when planning
+         #[arg(long, value_name = "N")]
+         jobs: Option<usize>,
++
++        /// Include hidden files and directories
++        #[arg(long)]
++        include_hidden: bool,
++
++        /// Follow symlinks when traversing directories
++        #[arg(long)]
++        follow_symlinks: bool,
++
++        /// Force case-insensitive glob matching (defaults to on for Windows)
++        #[arg(long, value_name = "BOOL")]
++        glob_case_insensitive: Option<bool>,
+     },
+ 
+     /// Apply a precomputed rename plan to a Python file
+@@ -219,6 +231,18 @@ enum Commands {
+         /// Show unified diffs for rewritten files
+         #[arg(long)]
+         diff: bool,
++
++        /// Include hidden files and directories
++        #[arg(long)]
++        include_hidden: bool,
++
++        /// Follow symlinks when traversing directories
++        #[arg(long)]
++        follow_symlinks: bool,
++
++        /// Force case-insensitive glob matching (defaults to on for Windows)
++        #[arg(long, value_name = "BOOL")]
++        glob_case_insensitive: Option<bool>,
+     },
+ 
+     /// Rewrite a Python file using safe local renames
+@@ -325,6 +349,18 @@ enum Commands {
+         /// Show unified diffs for rewritten files
+         #[arg(long)]
+         diff: bool,
++
++        /// Include hidden files and directories
++        #[arg(long)]
++        include_hidden: bool,
++
++        /// Follow symlinks when traversing directories
++        #[arg(long)]
++        follow_symlinks: bool,
++
++        /// Force case-insensitive glob matching (defaults to on for Windows)
++        #[arg(long, value_name = "BOOL")]
++        glob_case_insensitive: Option<bool>,
+     },
+ }
+ 
+@@ -367,8 +403,21 @@ fn main() -> anyhow::Result<()> {
+             include,
+             exclude,
+             jobs,
++            include_hidden,
++            follow_symlinks,
++            glob_case_insensitive,
+         } => {
+-            minify_plan_dir(&input_dir, &out, &include, &exclude, jobs, cli.quiet)?;
++            minify_plan_dir(
++                &input_dir,
++                &out,
++                &include,
++                &exclude,
++                jobs,
++                include_hidden,
++                follow_symlinks,
++                glob_case_insensitive,
++                cli.quiet,
++            )?;
+         }
+         Commands::Minify {
+             python_file,
+@@ -460,6 +509,9 @@ fn main() -> anyhow::Result<()> {
+             fail_on_error,
+             fail_on_change,
+             diff,
++            include_hidden,
++            follow_symlinks,
++            glob_case_insensitive,
+         } => {
+             let stats_result = minify_dir(
+                 &input_dir,
+@@ -471,6 +523,9 @@ fn main() -> anyhow::Result<()> {
+                 dry_run,
+                 stats,
+                 json,
++                include_hidden,
++                follow_symlinks,
++                glob_case_insensitive,
+                 cli.quiet,
+                 output_json.as_deref(),
+                 jobs,
+@@ -507,6 +562,9 @@ fn main() -> anyhow::Result<()> {
+             fail_on_error,
+             fail_on_change,
+             diff,
++            include_hidden,
++            follow_symlinks,
++            glob_case_insensitive,
+         } => {
+             let stats_result = apply_plan_dir(
+                 &input_dir,
+@@ -519,6 +577,9 @@ fn main() -> anyhow::Result<()> {
+                 dry_run,
+                 stats,
+                 json,
++                include_hidden,
++                follow_symlinks,
++                glob_case_insensitive,
+                 cli.quiet,
+                 output_json.as_deref(),
+                 jobs,
+@@ -593,7 +654,7 @@ fn slim(code_path: &PathBuf, venv_path: &PathBuf, output: Option<PathBuf>) -> an
+ }
+ 
+ fn minify_plan(file_path: &PathBuf) -> anyhow::Result<()> {
+-    let source = fs::read_to_string(file_path)?;
++    let (source, _) = read_python(file_path)?;
+     let module_name = file_path
+         .file_stem()
+         .and_then(|stem| stem.to_str())
+@@ -656,8 +717,12 @@ fn apply_plan(
+     let plan_file = fs::read_to_string(plan_path)?;
+     let plan: MinifyPlan = serde_json::from_str(&plan_file)?;
+ 
++    let (source, metadata) = read_python(file_path)?;
++
+     apply_plan_to_file(
+         file_path,
++        &source,
++        &metadata,
+         &plan,
+         in_place,
+         backup_ext,
+@@ -693,6 +758,20 @@ struct FileStats {
+     status: String,
+ }
+ 
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++enum LineEnding {
++    Lf,
++    Crlf,
++}
++
++#[derive(Clone, Copy, Debug)]
++struct TextMetadata {
++    encoding: Option<&'static Encoding>,
++    line_ending: LineEnding,
++    had_trailing_newline: bool,
++    had_bom: bool,
++}
++
+ fn print_file_status(path: &str, status: &str, renames: usize, show_stats: bool, quiet: bool) {
+     if quiet {
+         return;
+@@ -809,13 +888,23 @@ fn detect_pep263_encoding(bytes: &[u8]) -> Option<&'static Encoding> {
+         let lower = line.to_lowercase();
+         if let Some(idx) = lower.find("coding") {
+             let mut rest = &line[idx + "coding".len()..];
+-            rest = rest.trim_start_matches(|c: char| matches!(c, ' ' | '\t' | ':' | '=' | '-' | '*'));
++            rest =
++                rest.trim_start_matches(|c: char| matches!(c, ' ' | '\t' | ':' | '=' | '-' | '*'));
+             let label: String = rest
+                 .chars()
+                 .take_while(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+                 .collect();
+             if !label.is_empty() {
+-                return Encoding::for_label(label.trim().as_bytes());
++                let trimmed = label.trim();
++                if let Some(enc) = Encoding::for_label(trimmed.as_bytes()) {
++                    return Some(enc);
++                }
++                let fallback: String = trimmed.chars().filter(|c| *c != '-' && *c != '_').collect();
++                if !fallback.is_empty() {
++                    if let Some(enc) = Encoding::for_label(fallback.as_bytes()) {
++                        return Some(enc);
++                    }
++                }
+             }
+         }
+         None
+@@ -834,11 +923,10 @@ fn detect_pep263_encoding(bytes: &[u8]) -> Option<&'static Encoding> {
+     None
+ }
+ 
+-fn read_python(path: &Path) -> anyhow::Result<(String, Option<&'static Encoding>)> {
+-    let bytes = fs::read(path)
+-        .with_context(|| format!("failed to read {}", path.display()))?;
++fn read_python(path: &Path) -> anyhow::Result<(String, TextMetadata)> {
++    let bytes = fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
+ 
+-    let mut encoding = if bytes.starts_with(b"\xEF\xBB\xBF") {
++    let encoding = if bytes.starts_with(b"\xEF\xBB\xBF") {
+         Some(UTF_8)
+     } else if bytes.starts_with(&[0xFF, 0xFE]) {
+         Some(UTF_16LE)
+@@ -858,16 +946,86 @@ fn read_python(path: &Path) -> anyhow::Result<(String, Option<&'static Encoding>
+         );
+     }
+ 
+-    Ok((decoded.into_owned(), encoding))
++    let mut content = decoded.into_owned();
++
++    let mut has_crlf = false;
++    let mut has_plain_lf = false;
++    let bytes_view = content.as_bytes();
++    let mut i = 0;
++    while i < bytes_view.len() {
++        if bytes_view[i] == b'\r' {
++            if i + 1 < bytes_view.len() && bytes_view[i + 1] == b'\n' {
++                has_crlf = true;
++                i += 1;
++            } else {
++                has_plain_lf = true;
++            }
++        } else if bytes_view[i] == b'\n' {
++            if i == 0 || bytes_view[i - 1] != b'\r' {
++                has_plain_lf = true;
++            }
++        }
++        i += 1;
++    }
++
++    let line_ending = if has_crlf && !has_plain_lf {
++        LineEnding::Crlf
++    } else {
++        LineEnding::Lf
++    };
++
++    if matches!(line_ending, LineEnding::Crlf) {
++        content = content.replace("\r\n", "\n");
++    }
++
++    let had_trailing_newline = content.ends_with('\n');
++
++    let metadata = TextMetadata {
++        encoding,
++        line_ending,
++        had_trailing_newline,
++        had_bom: matches!(encoding, Some(enc) if (enc == UTF_8 && bytes.starts_with(b"\xEF\xBB\xBF"))
++            || (enc == UTF_16LE && bytes.starts_with(&[0xFF, 0xFE]))
++            || (enc == UTF_16BE && bytes.starts_with(&[0xFE, 0xFF]))),
++    };
++
++    Ok((content, metadata))
+ }
+ 
+-fn write_python(
+-    path: &Path,
+-    content: &str,
+-    encoding: Option<&'static Encoding>,
+-) -> anyhow::Result<()> {
+-    let encoder = encoding.unwrap_or(UTF_8);
+-    let (encoded, output_encoding, had_errors) = encoder.encode(content);
++fn write_python(path: &Path, content: &str, metadata: &TextMetadata) -> anyhow::Result<()> {
++    let mut adjusted = content.replace("\r\n", "\n");
++    if matches!(metadata.line_ending, LineEnding::Crlf) {
++        adjusted = adjusted.replace("\n", "\r\n");
++    }
++
++    let newline = match metadata.line_ending {
++        LineEnding::Lf => "\n",
++        LineEnding::Crlf => "\r\n",
++    };
++
++    if metadata.had_trailing_newline {
++        if !adjusted.ends_with(newline) {
++            while adjusted.ends_with('\n') || adjusted.ends_with('\r') {
++                adjusted.pop();
++            }
++            adjusted.push_str(newline);
++        }
++    } else {
++        if matches!(metadata.line_ending, LineEnding::Crlf) {
++            if adjusted.ends_with("\r\n") {
++                adjusted.truncate(adjusted.len() - 2);
++            } else if adjusted.ends_with('\n') {
++                adjusted.pop();
++            }
++        } else {
++            while adjusted.ends_with('\n') || adjusted.ends_with('\r') {
++                adjusted.pop();
++            }
++        }
++    }
++
++    let encoder = metadata.encoding.unwrap_or(UTF_8);
++    let (encoded, output_encoding, had_errors) = encoder.encode(&adjusted);
+     if had_errors || !std::ptr::eq(output_encoding, encoder) {
+         anyhow::bail!(
+             "failed to encode {} using {}",
+@@ -875,10 +1033,20 @@ fn write_python(
+             encoder.name()
+         );
+     }
++    let mut output: Vec<u8> = Vec::new();
++    if metadata.had_bom {
++        match encoder {
++            UTF_8 => output.extend_from_slice(b"\xEF\xBB\xBF"),
++            UTF_16LE => output.extend_from_slice(&[0xFF, 0xFE]),
++            UTF_16BE => output.extend_from_slice(&[0xFE, 0xFF]),
++            _ => {}
++        }
++    }
+     match encoded {
+-        Cow::Borrowed(bytes) => fs::write(path, bytes)?,
+-        Cow::Owned(buffer) => fs::write(path, buffer)?,
++        Cow::Borrowed(bytes) => output.extend_from_slice(bytes),
++        Cow::Owned(buffer) => output.extend_from_slice(&buffer),
+     }
++    fs::write(path, output)?;
+     Ok(())
+ }
+ 
+@@ -925,7 +1093,7 @@ fn minify_file(
+         anyhow::bail!("--json requires --stats");
+     }
+ 
+-    let (source, _) = read_python(file_path)?;
++    let (source, metadata) = read_python(file_path)?;
+     let module_name = file_path
+         .file_stem()
+         .and_then(|stem| stem.to_str())
+@@ -935,6 +1103,8 @@ fn minify_file(
+     let plan = Minifier::plan_from_source(&module_name, &source)?;
+     apply_plan_to_file(
+         file_path,
++        &source,
++        &metadata,
+         &plan,
+         in_place,
+         backup_ext,
+@@ -951,6 +1121,8 @@ fn minify_file(
+ 
+ fn apply_plan_to_file(
+     file_path: &PathBuf,
++    source: &str,
++    metadata: &TextMetadata,
+     plan: &MinifyPlan,
+     in_place: bool,
+     backup_ext: Option<&str>,
+@@ -971,22 +1143,15 @@ fn apply_plan_to_file(
+         anyhow::bail!("--backup-ext requires --in-place");
+     }
+ 
+-    let (source, encoding) = read_python(file_path)?;
+-    let module_name = file_path
+-        .file_stem()
+-        .and_then(|stem| stem.to_str())
+-        .map(|s| s.to_string())
+-        .unwrap_or_else(|| file_path.to_string_lossy().to_string());
+-
+     let rename_total: usize = plan.functions.iter().map(|f| f.renames.len()).sum();
+ 
+     let mut status;
+-    let mut final_content: Cow<'_, str> = Cow::Borrowed(&source);
++    let mut final_content: Cow<'_, str> = Cow::Borrowed(source);
+ 
+     if rename_total == 0 {
+         status = "skipped (no renames)".to_string();
+     } else {
+-        let rewritten = Minifier::rewrite_with_plan(&module_name, &source, plan)?;
++        let rewritten = Minifier::rewrite_with_plan(&plan.module, source, plan)?;
+         if rewritten == source {
+             status = "skipped (rewrite aborted)".to_string();
+         } else {
+@@ -1004,14 +1169,16 @@ fn apply_plan_to_file(
+             let backup_path = PathBuf::from(backup_os);
+             if backup_path.exists() {
+                 status = "skipped (backup exists)".to_string();
+-                final_content = Cow::Borrowed(&source);
++                final_content = Cow::Borrowed(source);
+             } else {
+-                write_python(&backup_path, &source, encoding)?;
++                fs::copy(file_path, &backup_path).with_context(|| {
++                    format!("failed to create backup {}", backup_path.display())
++                })?;
+             }
+         }
+ 
+         if let Cow::Owned(ref content) = final_content {
+-            write_python(file_path, content, encoding)?;
++            write_python(file_path, content, metadata)?;
+         }
+     }
+ 
+@@ -1028,7 +1195,7 @@ fn apply_plan_to_file(
+     }
+ 
+     if diff && matches!(status.as_str(), "minified") {
+-        let diff_str = make_unified_diff(&display_path, &source, final_content.as_ref());
++        let diff_str = make_unified_diff(&display_path, source, final_content.as_ref());
+         println!("{}", diff_str);
+     }
+ 
+@@ -1093,6 +1260,9 @@ fn minify_plan_dir(
+     includes: &[String],
+     excludes: &[String],
+     jobs: Option<usize>,
++    include_hidden: bool,
++    follow_symlinks: bool,
++    glob_case_insensitive: Option<bool>,
+     quiet: bool,
+ ) -> anyhow::Result<()> {
+     let input_dir = input_dir.canonicalize()?;
+@@ -1105,14 +1275,15 @@ fn minify_plan_dir(
+     } else {
+         includes.to_vec()
+     };
+-    let include_glob = build_globset(&include_patterns)?;
++    let glob_case_insensitive = glob_case_insensitive.unwrap_or(cfg!(windows));
++    let include_glob = build_globset(&include_patterns, glob_case_insensitive)?;
+     let exclude_patterns = merged_exclude_patterns(excludes);
+-    let exclude_glob = build_globset(&exclude_patterns)?;
++    let exclude_glob = build_globset(&exclude_patterns, glob_case_insensitive)?;
+ 
+     let mut errors = 0usize;
+     let mut candidates: Vec<Candidate> = Vec::new();
+ 
+-    for entry in WalkDir::new(&input_dir).follow_links(false) {
++    for entry in WalkDir::new(&input_dir).follow_links(follow_symlinks) {
+         let entry = match entry {
+             Ok(entry) => entry,
+             Err(err) => {
+@@ -1122,7 +1293,7 @@ fn minify_plan_dir(
+             }
+         };
+ 
+-        if entry.file_type().is_dir() || entry.file_type().is_symlink() {
++        if entry.file_type().is_dir() || (entry.file_type().is_symlink() && !follow_symlinks) {
+             continue;
+         }
+ 
+@@ -1134,9 +1305,10 @@ fn minify_plan_dir(
+ 
+         let rel_norm = normalize_rel_path(rel_path);
+ 
+-        if rel_path
+-            .components()
+-            .any(|comp| matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.')))
++        if !include_hidden
++            && rel_path.components().any(|comp| {
++                matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.'))
++            })
+         {
+             debug!("• {} → skipped (hidden path)", rel_norm);
+             continue;
+@@ -1197,8 +1369,8 @@ fn minify_plan_dir(
+     };
+ 
+     fn compute_plan(candidate: &Candidate) -> PlanOutcome {
+-        let source = match fs::read_to_string(&candidate.abs_path) {
+-            Ok(content) => content,
++        let source = match read_python(&candidate.abs_path) {
++            Ok((content, _)) => content,
+             Err(err) => return PlanOutcome::ReadError(err.to_string()),
+         };
+ 
+@@ -1282,6 +1454,9 @@ fn apply_plan_dir(
+     dry_run: bool,
+     show_stats: bool,
+     json_output: bool,
++    include_hidden: bool,
++    follow_symlinks: bool,
++    glob_case_insensitive: Option<bool>,
+     quiet: bool,
+     output_json: Option<&Path>,
+     jobs: Option<usize>,
+@@ -1367,16 +1542,17 @@ fn apply_plan_dir(
+     } else {
+         includes.to_vec()
+     };
+-    let include_glob = build_globset(&include_patterns)?;
++    let glob_case_insensitive = glob_case_insensitive.unwrap_or(cfg!(windows));
++    let include_glob = build_globset(&include_patterns, glob_case_insensitive)?;
+     let exclude_patterns = merged_exclude_patterns(excludes);
+-    let exclude_glob = build_globset(&exclude_patterns)?;
++    let exclude_glob = build_globset(&exclude_patterns, glob_case_insensitive)?;
+ 
+     let jobs = resolve_jobs(jobs)?;
+ 
+     let mut stats = DirStats::default();
+     let mut candidates: Vec<Candidate> = Vec::new();
+ 
+-    for entry in WalkDir::new(&input_dir).follow_links(false) {
++    for entry in WalkDir::new(&input_dir).follow_links(follow_symlinks) {
+         let entry = match entry {
+             Ok(entry) => entry,
+             Err(err) => {
+@@ -1386,7 +1562,7 @@ fn apply_plan_dir(
+             }
+         };
+ 
+-        if entry.file_type().is_dir() || entry.file_type().is_symlink() {
++        if entry.file_type().is_dir() || (entry.file_type().is_symlink() && !follow_symlinks) {
+             continue;
+         }
+ 
+@@ -1398,9 +1574,10 @@ fn apply_plan_dir(
+ 
+         let rel_norm = normalize_rel_path(rel_path);
+ 
+-        if rel_path
+-            .components()
+-            .any(|comp| matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.')))
++        if !include_hidden
++            && rel_path.components().any(|comp| {
++                matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.'))
++            })
+         {
+             debug!("• {} → skipped (hidden path)", rel_norm);
+             continue;
+@@ -1445,7 +1622,7 @@ fn apply_plan_dir(
+         let plan_map = Arc::clone(&plan_map);
+         move |candidate: &Candidate| -> FileResult {
+             let candidate_clone = candidate.clone();
+-            let (source, encoding) = match read_python(&candidate.abs_path) {
++            let (source, metadata) = match read_python(&candidate.abs_path) {
+                 Ok(result) => result,
+                 Err(err) => {
+                     return FileResult {
+@@ -1477,7 +1654,7 @@ fn apply_plan_dir(
+                     candidate: candidate_clone,
+                     outcome: FileOutcome::SkippedNested {
+                         original: source,
+-                        encoding,
++                        metadata,
+                     },
+                 };
+             }
+@@ -1487,7 +1664,7 @@ fn apply_plan_dir(
+                     candidate: candidate_clone,
+                     outcome: FileOutcome::SkippedNoRenames {
+                         original: source,
+-                        encoding,
++                        metadata,
+                     },
+                 };
+             }
+@@ -1499,7 +1676,7 @@ fn apply_plan_dir(
+                             candidate: candidate_clone,
+                             outcome: FileOutcome::SkippedRewriteAborted {
+                                 original: source,
+-                                encoding,
++                                metadata,
+                             },
+                         }
+                     } else {
+@@ -1509,7 +1686,7 @@ fn apply_plan_dir(
+                                 original: source,
+                                 rewritten,
+                                 renames: rename_total,
+-                                encoding,
++                                metadata,
+                             },
+                         }
+                     }
+@@ -1570,6 +1747,9 @@ fn minify_dir(
+     dry_run: bool,
+     show_stats: bool,
+     json_output: bool,
++    include_hidden: bool,
++    follow_symlinks: bool,
++    glob_case_insensitive: Option<bool>,
+     quiet: bool,
+     output_json: Option<&Path>,
+     jobs: Option<usize>,
+@@ -1639,13 +1819,14 @@ fn minify_dir(
+     } else {
+         includes.to_vec()
+     };
+-    let include_glob = build_globset(&include_patterns)?;
++    let glob_case_insensitive = glob_case_insensitive.unwrap_or(cfg!(windows));
++    let include_glob = build_globset(&include_patterns, glob_case_insensitive)?;
+     let exclude_patterns = merged_exclude_patterns(excludes);
+-    let exclude_glob = build_globset(&exclude_patterns)?;
++    let exclude_glob = build_globset(&exclude_patterns, glob_case_insensitive)?;
+ 
+     let mut candidates: Vec<Candidate> = Vec::new();
+ 
+-    for entry in WalkDir::new(&input_dir).follow_links(false) {
++    for entry in WalkDir::new(&input_dir).follow_links(follow_symlinks) {
+         let entry = match entry {
+             Ok(entry) => entry,
+             Err(err) => {
+@@ -1655,7 +1836,7 @@ fn minify_dir(
+             }
+         };
+ 
+-        if entry.file_type().is_dir() || entry.file_type().is_symlink() {
++        if entry.file_type().is_dir() || (entry.file_type().is_symlink() && !follow_symlinks) {
+             continue;
+         }
+ 
+@@ -1667,9 +1848,10 @@ fn minify_dir(
+ 
+         let rel_norm = normalize_rel_path(rel_path);
+ 
+-        if rel_path
+-            .components()
+-            .any(|comp| matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.')))
++        if !include_hidden
++            && rel_path.components().any(|comp| {
++                matches!(comp, std::path::Component::Normal(os) if os.to_string_lossy().starts_with('.'))
++            })
+         {
+             debug!("• {} → skipped (hidden path)", rel_norm);
+             continue;
+@@ -1707,7 +1889,7 @@ fn minify_dir(
+ 
+     let processor = |candidate: &Candidate| -> FileResult {
+         let candidate_clone = candidate.clone();
+-        let (source, encoding) = match read_python(&candidate.abs_path) {
++        let (source, metadata) = match read_python(&candidate.abs_path) {
+             Ok(result) => result,
+             Err(err) => {
+                 return FileResult {
+@@ -1740,7 +1922,7 @@ fn minify_dir(
+                 candidate: candidate_clone,
+                 outcome: FileOutcome::SkippedNested {
+                     original: source,
+-                    encoding,
++                    metadata,
+                 },
+             };
+         }
+@@ -1750,7 +1932,7 @@ fn minify_dir(
+                 candidate: candidate_clone,
+                 outcome: FileOutcome::SkippedNoRenames {
+                     original: source,
+-                    encoding,
++                    metadata,
+                 },
+             };
+         }
+@@ -1762,7 +1944,7 @@ fn minify_dir(
+                         candidate: candidate_clone,
+                         outcome: FileOutcome::SkippedRewriteAborted {
+                             original: source,
+-                            encoding,
++                            metadata,
+                         },
+                     }
+                 } else {
+@@ -1772,7 +1954,7 @@ fn minify_dir(
+                             original: source,
+                             rewritten,
+                             renames: rename_total,
+-                            encoding,
++                            metadata,
+                         },
+                     }
+                 }
+@@ -1869,10 +2051,12 @@ fn merged_exclude_patterns(extras: &[String]) -> Vec<String> {
+     patterns
+ }
+ 
+-fn build_globset(patterns: &[String]) -> anyhow::Result<GlobSet> {
++fn build_globset(patterns: &[String], case_insensitive: bool) -> anyhow::Result<GlobSet> {
+     let mut builder = GlobSetBuilder::new();
+     for pattern in patterns {
+-        builder.add(Glob::new(pattern)?);
++        let mut glob_builder = GlobBuilder::new(pattern);
++        glob_builder.case_insensitive(case_insensitive);
++        builder.add(glob_builder.build()?);
+     }
+     Ok(builder.build()?)
+ }
+@@ -1902,19 +2086,19 @@ enum FileOutcome {
+         original: String,
+         rewritten: String,
+         renames: usize,
+-        encoding: Option<&'static Encoding>,
++        metadata: TextMetadata,
+     },
+     SkippedNoRenames {
+         original: String,
+-        encoding: Option<&'static Encoding>,
++        metadata: TextMetadata,
+     },
+     SkippedNested {
+         original: String,
+-        encoding: Option<&'static Encoding>,
++        metadata: TextMetadata,
+     },
+     SkippedRewriteAborted {
+         original: String,
+-        encoding: Option<&'static Encoding>,
++        metadata: TextMetadata,
+     },
+     ReadError {
+         message: String,
+@@ -2040,7 +2224,7 @@ fn finalize_file_results(
+                 original,
+                 rewritten,
+                 renames,
+-                encoding,
++                metadata,
+             } => {
+                 process_ready_file(
+                     candidate,
+@@ -2054,13 +2238,13 @@ fn finalize_file_results(
+                     in_place,
+                     dry_run,
+                     backup_ext,
+-                    encoding,
++                    metadata,
+                     quiet,
+                     show_stats,
+                     diff,
+                 )?;
+             }
+-            FileOutcome::SkippedNoRenames { original, encoding } => {
++            FileOutcome::SkippedNoRenames { original, metadata } => {
+                 process_ready_file(
+                     candidate,
+                     original,
+@@ -2073,13 +2257,13 @@ fn finalize_file_results(
+                     in_place,
+                     dry_run,
+                     backup_ext,
+-                    encoding,
++                    metadata,
+                     quiet,
+                     show_stats,
+                     diff,
+                 )?;
+             }
+-            FileOutcome::SkippedNested { original, encoding } => {
++            FileOutcome::SkippedNested { original, metadata } => {
+                 process_ready_file(
+                     candidate,
+                     original,
+@@ -2092,13 +2276,13 @@ fn finalize_file_results(
+                     in_place,
+                     dry_run,
+                     backup_ext,
+-                    encoding,
++                    metadata,
+                     quiet,
+                     show_stats,
+                     diff,
+                 )?;
+             }
+-            FileOutcome::SkippedRewriteAborted { original, encoding } => {
++            FileOutcome::SkippedRewriteAborted { original, metadata } => {
+                 process_ready_file(
+                     candidate,
+                     original,
+@@ -2111,7 +2295,7 @@ fn finalize_file_results(
+                     in_place,
+                     dry_run,
+                     backup_ext,
+-                    encoding,
++                    metadata,
+                     quiet,
+                     show_stats,
+                     diff,
+@@ -2136,7 +2320,7 @@ fn process_ready_file(
+     in_place: bool,
+     dry_run: bool,
+     backup_ext: Option<&str>,
+-    encoding: Option<&'static Encoding>,
++    metadata: TextMetadata,
+     quiet: bool,
+     show_stats: bool,
+     diff: bool,
+@@ -2159,7 +2343,7 @@ fn process_ready_file(
+                         status_kind = FinalStatusKind::SkippedBackupExists;
+                         applied_renames = 0;
+                         debug!("• {} → skipped (backup exists)", candidate.rel_norm);
+-                    } else if let Err(err) = fs::write(&backup_path, &original) {
++                    } else if let Err(err) = fs::copy(&target_path, &backup_path) {
+                         stats.errors += 1;
+                         error!("failed to write backup {}: {}", backup_path.display(), err);
+                         debug!("• {} → skipped (backup failed)", candidate.rel_norm);
+@@ -2170,7 +2354,7 @@ fn process_ready_file(
+ 
+                 if status_kind == FinalStatusKind::Minified {
+                     if let Some(ref content) = rewritten {
+-                        if let Err(err) = fs::write(&target_path, content) {
++                        if let Err(err) = write_python(&target_path, content, &metadata) {
+                             stats.errors += 1;
+                             error!("failed to write {}: {}", target_path.display(), err);
+                             debug!("• {} → skipped (write failed)", candidate.rel_norm);
+@@ -2200,7 +2384,7 @@ fn process_ready_file(
+                 original.as_str()
+             };
+ 
+-            if let Err(err) = fs::write(&target_path, content) {
++            if let Err(err) = write_python(&target_path, content, &metadata) {
+                 stats.errors += 1;
+                 error!("failed to write {}: {}", target_path.display(), err);
+                 debug!("• {} → skipped (write failed)", candidate.rel_norm);
+@@ -2266,9 +2450,112 @@ fn process_ready_file(
+ mod tests {
+     use super::*;
+     use anyhow::Result as AnyResult;
++    use encoding_rs::Encoding;
+     use serde_json;
++    #[cfg(unix)]
++    use std::os::unix::fs::symlink;
+     use tempfile::tempdir;
+ 
++    #[derive(Default, Clone)]
++    struct MinifyDirTestCfg {
++        in_place: bool,
++        dry_run: bool,
++        show_stats: bool,
++        json_output: bool,
++        include_hidden: bool,
++        follow_symlinks: bool,
++        glob_case_insensitive: Option<bool>,
++        quiet: bool,
++        output_json: Option<PathBuf>,
++        jobs: Option<usize>,
++        fail_on_bailout: bool,
++        fail_on_error: bool,
++        fail_on_change: bool,
++        diff: bool,
++    }
++
++    #[derive(Default, Clone)]
++    struct ApplyPlanDirTestCfg {
++        in_place: bool,
++        dry_run: bool,
++        show_stats: bool,
++        json_output: bool,
++        include_hidden: bool,
++        follow_symlinks: bool,
++        glob_case_insensitive: Option<bool>,
++        quiet: bool,
++        output_json: Option<PathBuf>,
++        jobs: Option<usize>,
++        fail_on_bailout: bool,
++        fail_on_error: bool,
++        fail_on_change: bool,
++        diff: bool,
++    }
++
++    fn run_minify_dir(
++        input_dir: &Path,
++        out_dir: Option<PathBuf>,
++        includes: &[String],
++        excludes: &[String],
++        backup_ext: Option<&str>,
++        cfg: MinifyDirTestCfg,
++    ) -> AnyResult<DirStats> {
++        minify_dir(
++            &input_dir.to_path_buf(),
++            out_dir,
++            includes,
++            excludes,
++            backup_ext,
++            cfg.in_place,
++            cfg.dry_run,
++            cfg.show_stats,
++            cfg.json_output,
++            cfg.include_hidden,
++            cfg.follow_symlinks,
++            cfg.glob_case_insensitive,
++            cfg.quiet,
++            cfg.output_json.as_deref(),
++            cfg.jobs,
++            cfg.fail_on_bailout,
++            cfg.fail_on_error,
++            cfg.fail_on_change,
++            cfg.diff,
++        )
++    }
++
++    fn run_apply_plan_dir(
++        input_dir: &Path,
++        plan_path: &Path,
++        out_dir: Option<PathBuf>,
++        includes: &[String],
++        excludes: &[String],
++        backup_ext: Option<&str>,
++        cfg: ApplyPlanDirTestCfg,
++    ) -> AnyResult<DirStats> {
++        apply_plan_dir(
++            &input_dir.to_path_buf(),
++            &plan_path.to_path_buf(),
++            out_dir,
++            includes,
++            excludes,
++            backup_ext,
++            cfg.in_place,
++            cfg.dry_run,
++            cfg.show_stats,
++            cfg.json_output,
++            cfg.include_hidden,
++            cfg.follow_symlinks,
++            cfg.glob_case_insensitive,
++            cfg.quiet,
++            cfg.output_json.as_deref(),
++            cfg.jobs,
++            cfg.fail_on_bailout,
++            cfg.fail_on_error,
++            cfg.fail_on_change,
++            cfg.diff,
++        )
++    }
++
+     #[test]
+     fn unified_diff_smoke() {
+         let diff = make_unified_diff("example.py", "a = 1\n", "a = 2\n");
+@@ -2278,6 +2565,13 @@ mod tests {
+         assert!(diff.contains("+a = 2"));
+     }
+ 
++    #[test]
++    fn glob_case_insensitive_matches_uppercase() -> AnyResult<()> {
++        let set = build_globset(&["a*.py".to_string()], true)?;
++        assert!(set.is_match("A.py"));
++        Ok(())
++    }
++
+     #[test]
+     fn minify_dir_preserves_structure() -> AnyResult<()> {
+         let tmp = tempdir()?;
+@@ -2294,23 +2588,19 @@ def sample(value):
+         fs::write(nested.join("__init__.py"), "")?;
+ 
+         let output_dir = tmp.path().join("output");
+-        let _stats = minify_dir(
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
+             &input_dir,
+             Some(output_dir.clone()),
+-            &[],
+-            &[],
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-            false,
+-            None,
++            &includes,
++            &excludes,
+             None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )?;
+ 
+         let rewritten = fs::read_to_string(output_dir.join("module.py"))?;
+@@ -2338,23 +2628,19 @@ def sample(value):
+         )?;
+ 
+         let output_dir = tmp.path().join("out");
+-        let _stats = minify_dir(
++        let includes = vec!["pkg_a/**".to_string()];
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
+             &input_dir,
+             Some(output_dir.clone()),
+-            &["pkg_a/**".to_string()],
+-            &[],
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-            true,
++            &includes,
++            &excludes,
+             None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )?;
+ 
+         assert!(output_dir.join("pkg_a/mod.py").exists());
+@@ -2373,23 +2659,21 @@ def sample(value):
+         )?;
+ 
+         let output_dir = tmp.path().join("out");
+-        let _stats = minify_dir(
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            dry_run: true,
++            show_stats: true,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
+             &input_dir,
+             Some(output_dir.clone()),
+-            &[],
+-            &[],
+-            None,
+-            false,
+-            true,
+-            true,
+-            false,
+-            true,
++            &includes,
++            &excludes,
+             None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )?;
+ 
+         assert!(!output_dir.exists());
+@@ -2407,24 +2691,14 @@ def sample(value):
+             "def foo(value):\n    temp = value + 1\n    return temp\n",
+         )?;
+ 
+-        let _stats = minify_dir(
+-            &input_dir,
+-            None,
+-            &[],
+-            &[],
+-            None,
+-            true,
+-            false,
+-            false,
+-            false,
+-            true,
+-            None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-        )?;
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            in_place: true,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(&input_dir, None, &includes, &excludes, None, cfg)?;
+ 
+         let rewritten = fs::read_to_string(&file_path)?;
+         assert!(rewritten.contains("def foo(a):"));
+@@ -2440,24 +2714,14 @@ def sample(value):
+         let original = "def foo(value):\n    temp = value + 1\n    return temp\n";
+         fs::write(&file_path, original)?;
+ 
+-        let _stats = minify_dir(
+-            &input_dir,
+-            None,
+-            &[],
+-            &[],
+-            Some(".bak"),
+-            true,
+-            false,
+-            false,
+-            false,
+-            true,
+-            None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-        )?;
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            in_place: true,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(&input_dir, None, &includes, &excludes, Some(".bak"), cfg)?;
+ 
+         let rewritten = fs::read_to_string(&file_path)?;
+         assert!(rewritten.contains("def foo(a):"));
+@@ -2481,25 +2745,85 @@ def sample(value):
+         )?;
+ 
+         let output_dir = tmp.path().join("out");
+-        let _stats = minify_dir(
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            dry_run: true,
++            show_stats: true,
++            json_output: true,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
+             &input_dir,
+             Some(output_dir),
+-            &[],
+-            &[],
++            &includes,
++            &excludes,
+             None,
+-            false,
+-            true,
+-            true,
+-            true,
+-            true,
++            cfg,
++        )?;
++
++        Ok(())
++    }
++
++    #[test]
++    fn minify_dir_skips_hidden_by_default() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(
++            input_dir.join(".hidden.py"),
++            "def foo(x):\n    y = x + 1\n    return y\n",
++        )?;
++
++        let output_dir = tmp.path().join("out");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
++            &input_dir,
++            Some(output_dir.clone()),
++            &includes,
++            &excludes,
+             None,
++            cfg,
++        )?;
++
++        assert!(!output_dir.join(".hidden.py").exists());
++        Ok(())
++    }
++
++    #[test]
++    fn minify_dir_includes_hidden_when_requested() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(
++            input_dir.join(".hidden.py"),
++            "def foo(x):\n    y = x + 1\n    return y\n",
++        )?;
++
++        let output_dir = tmp.path().join("out");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            include_hidden: true,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_minify_dir(
++            &input_dir,
++            Some(output_dir.clone()),
++            &includes,
++            &excludes,
+             None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )?;
+ 
++        assert!(output_dir.join(".hidden.py").exists());
+         Ok(())
+     }
+ 
+@@ -2563,34 +2887,100 @@ def sample(value):
+     }
+ 
+     #[test]
+-    fn minify_dir_output_json_writes_file() -> AnyResult<()> {
++    fn minify_file_preserves_encoding_cookie() -> AnyResult<()> {
+         let tmp = tempdir()?;
+-        let input_dir = tmp.path().join("src");
+-        fs::create_dir_all(&input_dir)?;
+-        fs::write(
+-            input_dir.join("example.py"),
+-            "def foo(x):\n    y = x + 1\n    return y\n",
++        let file_path = tmp.path().join("latin.py");
++        let source = "# -*- coding: latin-1 -*-\n\nmsg = \"café\"\n\ndef foo(value):\n    temp = value + 1\n    return msg\n";
++        let encoding = Encoding::for_label(b"iso-8859-1").expect("latin-1 encoding");
++        let (encoded, output_enc, had_errors) = encoding.encode(source);
++        assert!(!had_errors);
++        assert!(std::ptr::eq(output_enc, encoding));
++        match encoded {
++            Cow::Borrowed(bytes) => fs::write(&file_path, bytes)?,
++            Cow::Owned(buffer) => fs::write(&file_path, buffer)?,
++        }
++
++        let stats = minify_file(
++            &file_path, true, None, false, false, true, None, false, false, false, false,
+         )?;
++        assert_eq!(stats.rewritten, 1);
+ 
+-        let output_dir = tmp.path().join("out");
+-        let json_path = tmp.path().join("dir.json");
+-        let stats = minify_dir(
+-            &input_dir,
+-            Some(output_dir),
+-            &[],
+-            &[],
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-            true,
+-            Some(json_path.as_path()),
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
++        let bytes_after = fs::read(&file_path)?;
++        let (decoded, had_decode_errors) = encoding.decode_without_bom_handling(&bytes_after);
++        assert!(!had_decode_errors);
++        let text = decoded.into_owned();
++        assert!(text.lines().next().unwrap().contains("coding: latin-1"));
++        assert!(text.contains("café"));
++
++        Ok(())
++    }
++
++    #[test]
++    fn preserves_crlf_after_rewrite() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let file_path = tmp.path().join("crlf.py");
++        let source = "def foo(value):\r\n    temp = value + 1\r\n    return temp\r\n";
++        fs::write(&file_path, source)?;
++
++        let _ = minify_file(
++            &file_path, true, None, false, false, true, None, false, false, false, false,
++        )?;
++
++        let bytes_after = fs::read(&file_path)?;
++        for (idx, byte) in bytes_after.iter().enumerate() {
++            if *byte == b'\n' {
++                assert!(idx > 0 && bytes_after[idx - 1] == b'\r');
++            }
++        }
++
++        Ok(())
++    }
++
++    #[test]
++    fn preserves_missing_final_newline() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let file_path = tmp.path().join("no_newline.py");
++        let source = "def foo(value):\n    temp = value + 1\n    return temp";
++        fs::write(&file_path, source)?;
++
++        let _ = minify_file(
++            &file_path, true, None, false, false, true, None, false, false, false, false,
++        )?;
++
++        let bytes_after = fs::read(&file_path)?;
++        if let Some(last) = bytes_after.last() {
++            assert!(*last != b'\n' && *last != b'\r');
++        }
++
++        Ok(())
++    }
++
++    #[test]
++    fn minify_dir_output_json_writes_file() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(
++            input_dir.join("example.py"),
++            "def foo(x):\n    y = x + 1\n    return y\n",
++        )?;
++
++        let output_dir = tmp.path().join("out");
++        let json_path = tmp.path().join("dir.json");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            quiet: true,
++            output_json: Some(json_path.clone()),
++            ..Default::default()
++        };
++        let stats = run_minify_dir(
++            &input_dir,
++            Some(output_dir),
++            &includes,
++            &excludes,
++            None,
++            cfg,
+         )?;
+ 
+         let written: DirStats = serde_json::from_str(&fs::read_to_string(&json_path)?)?;
+@@ -2610,25 +3000,14 @@ def sample(value):
+         )?;
+ 
+         let out_dir = input_dir.join("out");
+-        let err = minify_dir(
+-            &input_dir,
+-            Some(out_dir),
+-            &[],
+-            &[],
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-            true,
+-            None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-        )
+-        .expect_err("out dir under input should error");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = MinifyDirTestCfg {
++            quiet: true,
++            ..Default::default()
++        };
++        let err = run_minify_dir(&input_dir, Some(out_dir), &includes, &excludes, None, cfg)
++            .expect_err("out dir under input should error");
+         let message = err.to_string();
+         assert!(
+             message.contains("--out-dir cannot be inside the input directory"),
+@@ -2649,29 +3028,36 @@ def sample(value):
+         )?;
+ 
+         let plan_path = tmp.path().join("plan.json");
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
+-        assert!(plan_path.exists());
+-
+-        let output_dir = tmp.path().join("out");
+-        let json_path = tmp.path().join("apply-dir.json");
+-        let stats = apply_plan_dir(
++        minify_plan_dir(
+             &input_dir,
+             &plan_path,
+-            Some(output_dir),
+             &[],
+             &[],
+             None,
+             false,
+             false,
+-            false,
+-            false,
++            None,
+             true,
+-            Some(json_path.as_path()),
++        )?;
++        assert!(plan_path.exists());
++
++        let output_dir = tmp.path().join("out");
++        let json_path = tmp.path().join("apply-dir.json");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = ApplyPlanDirTestCfg {
++            quiet: true,
++            output_json: Some(json_path.clone()),
++            ..Default::default()
++        };
++        let stats = run_apply_plan_dir(
++            &input_dir,
++            &plan_path,
++            Some(output_dir),
++            &includes,
++            &excludes,
+             None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )?;
+ 
+         let written: DirStats = serde_json::from_str(&fs::read_to_string(&json_path)?)?;
+@@ -2691,27 +3077,33 @@ def sample(value):
+         )?;
+ 
+         let plan_path = tmp.path().join("plan.json");
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
+-
+-        let out_dir = input_dir.join("out");
+-        let err = apply_plan_dir(
++        minify_plan_dir(
+             &input_dir,
+             &plan_path,
+-            Some(out_dir),
+             &[],
+             &[],
+             None,
+             false,
+             false,
+-            false,
+-            false,
+-            true,
+             None,
++            true,
++        )?;
++
++        let out_dir = input_dir.join("out");
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = ApplyPlanDirTestCfg {
++            quiet: true,
++            ..Default::default()
++        };
++        let err = run_apply_plan_dir(
++            &input_dir,
++            &plan_path,
++            Some(out_dir),
++            &includes,
++            &excludes,
+             None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )
+         .expect_err("out dir under input should error");
+         let message = err.to_string();
+@@ -2865,54 +3257,281 @@ def sample(value):
+         )?;
+ 
+         let plan_path = tmp.path().join("plan.json");
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
+         assert!(plan_path.exists());
+ 
+         let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
+         assert_eq!(plan_bundle.files.len(), 2);
+ 
+         let output_dir = tmp.path().join("out");
+-        let _stats = apply_plan_dir(
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = ApplyPlanDirTestCfg {
++            show_stats: false,
++            quiet: true,
++            ..Default::default()
++        };
++        let _stats = run_apply_plan_dir(
+             &input_dir,
+             &plan_path,
+             Some(output_dir.clone()),
++            &includes,
++            &excludes,
++            None,
++            cfg,
++        )?;
++
++        let rewritten_module = fs::read_to_string(output_dir.join("module.py"))?;
++        assert!(rewritten_module.contains("def foo(a):"));
++
++        let rewritten_helper = fs::read_to_string(output_dir.join("pkg/helpers.py"))?;
++        assert!(rewritten_helper.contains("def helper(a):"));
++
++        Ok(())
++    }
++
++    #[test]
++    fn minify_plan_dir_includes_version() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(input_dir.join("example.py"), "def foo(x):\n    return x\n")?;
++
++        let plan_path = tmp.path().join("plan.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
+             &[],
+             &[],
+             None,
+             false,
+             false,
++            None,
++            true,
++        )?;
++
++        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        assert_eq!(plan_bundle.version, PLAN_BUNDLE_VERSION);
++
++        Ok(())
++    }
++
++    #[test]
++    fn minify_plan_dir_skips_hidden_by_default() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(input_dir.join(".hidden.py"), "def foo(x):\n    return x\n")?;
++
++        let plan_path = tmp.path().join("plan.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
+             false,
+             false,
+-            true,
+             None,
++            true,
++        )?;
++
++        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        assert!(plan_bundle.files.is_empty());
++
++        Ok(())
++    }
++
++    #[test]
++    fn minify_plan_dir_includes_hidden_when_requested() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(input_dir.join(".hidden.py"), "def foo(x):\n    return x\n")?;
++
++        let plan_path = tmp.path().join("plan.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
+             None,
++            true,
+             false,
++            None,
++            true,
++        )?;
++
++        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        assert_eq!(plan_bundle.files.len(), 1);
++        assert_eq!(plan_bundle.files[0].path, ".hidden.py");
++
++        Ok(())
++    }
++
++    #[cfg(unix)]
++    #[test]
++    fn minify_plan_dir_skips_symlink_by_default() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        let real_dir = input_dir.join("real");
++        fs::create_dir_all(&real_dir)?;
++        fs::write(real_dir.join("a.py"), "def foo(x):\n    return x\n")?;
++
++        let link_path = input_dir.join("link");
++        symlink(&real_dir, &link_path)?;
++
++        let plan_path = tmp.path().join("plan.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
+             false,
+             false,
+-            false,
++            None,
++            true,
+         )?;
+ 
+-        let rewritten_module = fs::read_to_string(output_dir.join("module.py"))?;
+-        assert!(rewritten_module.contains("def foo(a):"));
++        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        assert_eq!(plan_bundle.files.len(), 1);
++        assert_eq!(plan_bundle.files[0].path, "real/a.py");
+ 
+-        let rewritten_helper = fs::read_to_string(output_dir.join("pkg/helpers.py"))?;
+-        assert!(rewritten_helper.contains("def helper(a):"));
++        Ok(())
++    }
++
++    #[cfg(unix)]
++    #[test]
++    fn minify_plan_dir_follows_symlink_when_requested() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        let real_dir = input_dir.join("real");
++        fs::create_dir_all(&real_dir)?;
++        fs::write(real_dir.join("a.py"), "def foo(x):\n    return x\n")?;
++
++        let link_path = input_dir.join("link");
++        symlink(&real_dir, &link_path)?;
++
++        let plan_path = tmp.path().join("plan.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
++            false,
++            true,
++            None,
++            true,
++        )?;
++
++        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        assert_eq!(plan_bundle.files.len(), 2);
++        let paths: Vec<_> = plan_bundle
++            .files
++            .into_iter()
++            .map(|entry| entry.path)
++            .collect();
++        assert_eq!(
++            paths,
++            vec!["link/a.py".to_string(), "real/a.py".to_string()]
++        );
+ 
+         Ok(())
+     }
+ 
++    #[cfg(windows)]
+     #[test]
+-    fn minify_plan_dir_includes_version() -> AnyResult<()> {
++    fn minify_plan_dir_default_case_insensitive_on_windows() -> AnyResult<()> {
+         let tmp = tempdir()?;
+         let input_dir = tmp.path().join("src");
+         fs::create_dir_all(&input_dir)?;
+-        fs::write(input_dir.join("example.py"), "def foo(x):\n    return x\n")?;
++        fs::write(input_dir.join("A.py"), "def foo(x):\n    return x\n")?;
+ 
+         let plan_path = tmp.path().join("plan.json");
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &["a*.py".to_string()],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
+ 
+-        let plan_bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
+-        assert_eq!(plan_bundle.version, PLAN_BUNDLE_VERSION);
++        let bundle: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
++        let paths: Vec<_> = bundle.files.into_iter().map(|f| f.path).collect();
++        assert_eq!(paths, vec!["A.py".to_string()]);
++
++        Ok(())
++    }
++
++    #[cfg(not(windows))]
++    #[test]
++    fn minify_plan_dir_case_insensitive_flag_controls_matching() -> AnyResult<()> {
++        let tmp = tempdir()?;
++        let input_dir = tmp.path().join("src");
++        fs::create_dir_all(&input_dir)?;
++        fs::write(input_dir.join("A.py"), "def foo(x):\n    return x\n")?;
++
++        let plan_default = tmp.path().join("plan_default.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_default,
++            &["a*.py".to_string()],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
++        let bundle_default: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_default)?)?;
++        assert!(bundle_default.files.is_empty());
++
++        let plan_ci = tmp.path().join("plan_ci.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_ci,
++            &["a*.py".to_string()],
++            &[],
++            None,
++            false,
++            false,
++            Some(true),
++            true,
++        )?;
++        let bundle_ci: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_ci)?)?;
++        let ci_paths: Vec<_> = bundle_ci.files.into_iter().map(|f| f.path).collect();
++        assert_eq!(ci_paths, vec!["A.py".to_string()]);
++
++        let plan_cs = tmp.path().join("plan_cs.json");
++        minify_plan_dir(
++            &input_dir,
++            &plan_cs,
++            &["a*.py".to_string()],
++            &[],
++            None,
++            false,
++            false,
++            Some(false),
++            true,
++        )?;
++        let bundle_cs: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_cs)?)?;
++        assert!(bundle_cs.files.is_empty());
+ 
+         Ok(())
+     }
+@@ -2925,7 +3544,17 @@ def sample(value):
+         fs::write(input_dir.join("example.py"), "def foo(x):\n    return x\n")?;
+ 
+         let plan_path = tmp.path().join("plan.json");
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
+ 
+         let mut bundle_value: serde_json::Value =
+             serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
+@@ -2940,24 +3569,21 @@ def sample(value):
+         fs::write(&plan_path, serde_json::to_string_pretty(&bundle_value)?)?;
+ 
+         let output_dir = tmp.path().join("out");
+-        let err = apply_plan_dir(
++        let includes: Vec<String> = Vec::new();
++        let excludes: Vec<String> = Vec::new();
++        let cfg = ApplyPlanDirTestCfg {
++            quiet: true,
++            fail_on_bailout: false,
++            ..Default::default()
++        };
++        let err = run_apply_plan_dir(
+             &input_dir,
+             &plan_path,
+             Some(output_dir),
+-            &[],
+-            &[],
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
+-            true,
++            &includes,
++            &excludes,
+             None,
+-            None,
+-            false,
+-            false,
+-            false,
+-            false,
++            cfg,
+         )
+         .expect_err("future plan version should be rejected");
+ 
+@@ -2982,10 +3608,30 @@ def sample(value):
+ 
+         let plan_path = tmp.path().join("plan.json");
+ 
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
+         let bundle_one: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
+ 
+-        minify_plan_dir(&input_dir, &plan_path, &[], &[], None, true)?;
++        minify_plan_dir(
++            &input_dir,
++            &plan_path,
++            &[],
++            &[],
++            None,
++            false,
++            false,
++            None,
++            true,
++        )?;
+         let bundle_two: PlanBundle = serde_json::from_str(&fs::read_to_string(&plan_path)?)?;
+ 
+         let expected = vec!["a.py", "b.py"];

@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+dist/
+build/
+*.egg-info/
+experiment_results/
+synthetic_experiment_results/
+node_modules/
+.next/
+*.tsbuildinfo
+.env
+qdrant_object_memory/

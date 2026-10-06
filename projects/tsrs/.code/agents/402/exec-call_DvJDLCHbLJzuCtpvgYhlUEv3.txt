@@ -1,0 +1,1049 @@
+diff --git a/MINIFY_DESIGN.md b/MINIFY_DESIGN.md
+index 8e22f9e..ead270c 100644
+--- a/MINIFY_DESIGN.md
++++ b/MINIFY_DESIGN.md
+@@ -354,6 +354,19 @@ fn visit_stmts_for_functions<'a>(
+ 5. **Match patterns**: Variable bindings in match cases (include)
+ 6. **Type parameters** (3.12+): Generic type vars (include if present)
+ 
++## Docstring Handling
++
++- After applying rename plans, the minifier re-parses the module and strips docstrings
++  from modules, classes, synchronous functions, and async functions whenever the
++  docstring is the first statement in the scope.
++- Docstring detection uses `rustpython-parser` ranges so the exact slice (including
++  leading indentation and trailing newline) is removed without disturbing the rest of
++  the file layout.
++- Decorated functions and nested scopes are supported because detection operates on
++  the AST rather than string heuristics.
++- Normal string literals inside executable code paths are untouched to preserve
++  runtime behaviour—only documentation literals in docstring position are removed.
++
+ ## Notes
+ 
+ - This design focuses on **planning** only - no AST rewriting
+diff --git a/README.md b/README.md
+index ea3be31..0de9a92 100644
+--- a/README.md
++++ b/README.md
+@@ -38,11 +38,26 @@ Tree-shaking is the process of analyzing code to identify and remove unused expo
+ # Apply in place with a backup and stats
+ ./target/debug/tsrs-cli apply-plan path/to/module.py --plan plan.json --in-place --backup-ext .bak --stats --json
+ 
++# Feed plan JSON from stdin
++./target/debug/tsrs-cli apply-plan path/to/module.py --plan - < plan.json
++
++# Dry run an in-place apply without modifying the file
++./target/debug/tsrs-cli apply-plan path/to/module.py --plan plan.json --in-place --dry-run
++
+ # Preview the planned changes without touching the file
+ ./target/debug/tsrs-cli apply-plan path/to/module.py --plan plan.json --diff
+ 
+ # Persist plan application stats for later inspection
+ ./target/debug/tsrs-cli apply-plan path/to/module.py --plan plan.json --stats --output-json reports/apply-plan.json
++
++# Pipe source through stdin and capture rewritten output
++cat path/to/module.py \\ 
++  | ./target/debug/tsrs-cli apply-plan path/to/module.py --plan plan.json --stdin --stdout \\ 
++  > path/to/module.min.py
++
++# Pipe source followed by plan JSON through stdin (source first, plan second)
++{ cat path/to/module.py; cat plan.json; } \\ 
++  | ./target/debug/tsrs-cli apply-plan stdin.py --stdin --plan-stdin
+ ```
+ 
+ ### Safe Local Rename Rewrite
+@@ -54,6 +69,9 @@ Tree-shaking is the process of analyzing code to identify and remove unused expo
+ # Rewrite in place (updates the file on disk)
+ ./target/debug/tsrs-cli minify path/to/module.py --in-place
+ 
++# Preview the in-place rewrite without touching the file
++./target/debug/tsrs-cli minify path/to/module.py --in-place --dry-run
++
+ # Keep a .bak backup before rewriting in place
+ ./target/debug/tsrs-cli minify path/to/module.py --in-place --backup-ext .bak
+ 
+@@ -63,10 +81,19 @@ Tree-shaking is the process of analyzing code to identify and remove unused expo
+ 
+ # Preview a unified diff alongside rewritten output
+ ./target/debug/tsrs-cli minify path/to/module.py --diff
++# Adjust diff context lines (default: 3)
++./target/debug/tsrs-cli minify path/to/module.py --diff --diff-context 5
+ # Persist stats to disk for later analysis
+ ./target/debug/tsrs-cli minify path/to/module.py --stats --output-json reports/minify.json
++
++# Stream via stdin/stdout for editor integrations
++cat path/to/module.py \\
++  | ./target/debug/tsrs-cli minify path/to/module.py --stdin --stdout \\
++  > path/to/module.min.py
+ ```
+ 
++Docstrings at the module, class, and function level are stripped automatically during these rewrites so the rewritten files shed non-executable documentation without changing runtime behaviour. Ordinary string literals inside executable code remain intact.
++
+ ### Directory Rewrite
+ 
+ ```bash
+@@ -76,11 +103,17 @@ Tree-shaking is the process of analyzing code to identify and remove unused expo
+ # Write into a custom output directory
+ ./target/debug/tsrs-cli minify-dir ./src --out-dir ./dist/min
+ 
++> The output path must reside outside the input tree after resolving `..` segments
++> and symlinks; otherwise the command aborts to avoid clobbering sources.
++
+ # Only minify application code, skip tests
+ ./target/debug/tsrs-cli minify-dir ./project \
+   --include "project/**" \
+   --exclude "project/tests/**"
+ 
++# Load include/exclude globs from files
++./target/debug/tsrs-cli minify-dir ./src --include-file includes.txt --exclude-file excludes.txt
++
+ # Preview changes without writing files
+ ./target/debug/tsrs-cli minify-dir ./src --dry-run
+ 
+@@ -90,21 +123,62 @@ Tree-shaking is the process of analyzing code to identify and remove unused expo
+ # Rewrite in place and keep .bak backups of originals
+ ./target/debug/tsrs-cli minify-dir ./src --in-place --backup-ext .bak
+ 
++# Customize diff context for previews (default: 3)
++./target/debug/tsrs-cli minify-dir ./src --diff --diff-context 1 --dry-run
++
++# Limit traversal depth (root depth = 1)
++./target/debug/tsrs-cli minify-dir ./src --max-depth 2 --dry-run
++
+ # Limit the worker pool (defaults to CPU count)
+ ./target/debug/tsrs-cli minify-dir ./src --jobs 4
+ 
++# Process hidden files and directories as well
++./target/debug/tsrs-cli minify-dir ./src --include-hidden
++
++# Layer repository ignore rules on top of custom globs
++./target/debug/tsrs-cli minify-dir ./src --respect-gitignore --exclude "scripts/**"
++
++# Traverse symlinked directories too
++./target/debug/tsrs-cli minify-dir ./src --follow-symlinks
++
++# Force case-insensitive glob matching on non-Windows hosts
++./target/debug/tsrs-cli minify-dir ./src --glob-case-insensitive
++
+ # Show diffs for every rewritten file
+ ./target/debug/tsrs-cli minify-dir ./src --diff
+ 
+ # Write stats to a JSON file for dashboards
+ ./target/debug/tsrs-cli minify-dir ./src --stats --output-json reports/minify-dir.json
++
++# Plan a directory but ignore deeply nested modules
++./target/debug/tsrs-cli minify-plan-dir ./src --max-depth 2 --jobs 4 > plans.json
++
++> When `--respect-gitignore` is set, `.gitignore`, global git excludes, and `.ignore`
++> files run first; explicit `--include`/`--exclude` (or pattern files) are then applied
++> on top, so excludes still win over includes.
+ ```
+ 
+ Each run prints per-file status lines (minified, skipped, bailouts) and summarises the total work. Bailouts copy the original file verbatim so you never lose working code—re-run with `--debug` to inspect why a file could not be safely renamed.
+ 
+ Add `--stats` to include per-file rename counts in the output, and combine it with `--json` for a machine-readable summary of the same data.
+ 
+-All directory commands accept `--jobs <N>` to control the number of Rayon worker threads. When omitted the tool uses the machine's CPU count. They also ignore `.git`, `__pycache__`, and `.venv` directories by default.
++Pass `--quiet` when you only want the final summary/JSON; it suppresses per-file status lines, diff output, and non-in-place rewritten content (unless you opt into `--stdout`).
++
++Use `--dry-run` to preview the work (including stats and diffs) without writing any files—available for both single-file and directory commands.
++
++For CI flows, combine `--fail-on-change`, `--fail-on-bailout`, or `--fail-on-error` with dry runs to turn safe previews into enforcement checks.
++
++All directory commands accept `--jobs <N>` to control the number of Rayon worker threads. When omitted the tool uses the machine's CPU count. They also ignore `.git`, `__pycache__`, and `.venv` directories by default—add `--follow-symlinks` if you need to traverse symlinked trees, and `--glob-case-insensitive` if you want case-insensitive glob matching on platforms where the default is case-sensitive (Windows already matches case-insensitively).
++Pattern files (`--include-file`, `--exclude-file`) accept newline-delimited globs; blank lines and `#` comments are ignored.
++
++Key directory flags at a glance:
++
++- `--diff` / `--diff-context <N>` preview unified diffs with adjustable context (default 3 lines).
++- `--max-depth <N>` limits recursion depth (the root input directory counts as depth 1).
++- `--include-hidden` enables processing of dot-prefixed files and directories.
++- Exclude globs always take precedence over include globs.
++- `--follow-symlinks` traverses symlinked directories.
++- `--glob-case-insensitive` forces case-insensitive glob matching on every platform.
+ 
+ ### Plan Bundles
+ 
+@@ -112,6 +186,9 @@ All directory commands accept `--jobs <N>` to control the number of Rayon worker
+ # Create a directory-wide plan bundle
+ ./target/debug/tsrs-cli minify-plan-dir ./src --out plan.json
+ 
++# Include hidden files while planning
++./target/debug/tsrs-cli minify-plan-dir ./src --out plan.json --include-hidden
++
+ # Apply the bundle to a mirrored output tree
+ ./target/debug/tsrs-cli apply-plan-dir ./src --plan plan.json --out-dir ./src-min
+ 
+@@ -121,6 +198,9 @@ All directory commands accept `--jobs <N>` to control the number of Rayon worker
+ # Include unified diffs while applying a plan bundle
+ ./target/debug/tsrs-cli apply-plan-dir ./src --plan plan.json --diff
+ 
++# Apply to hidden files too
++./target/debug/tsrs-cli apply-plan-dir ./src --plan plan.json --include-hidden
++
+ # Capture directory stats to a JSON report while applying a bundle
+ ./target/debug/tsrs-cli apply-plan-dir ./src --plan plan.json --stats --output-json reports/apply-plan-dir.json
+ 
+@@ -130,6 +210,19 @@ All directory commands accept `--jobs <N>` to control the number of Rayon worker
+ Plan bundles include a `version` field (currently `1`) so future releases can evolve the schema without breaking old plans; tools should validate this field when consuming stored bundles, and the CLI refuses to apply plans whose version exceeds the supported value.
+ ```
+ 
++### Integration Tests
++
++```bash
++# Run CLI slimming scenarios (used vs unused packages)
++cargo test --test cli_integration
++
++# Run minify/minify-plan integration coverage
++cargo test --test minify_integration
++
++# Run apply-plan / apply-plan-dir integration coverage
++cargo test --test apply_integration
++```
++
+ ## References
+ 
+ - [pyminifier (liftoffsoftware)](https://github.com/liftoff/pyminifier)
+diff --git a/src/minify.rs b/src/minify.rs
+index b25ed43..45f13b3 100644
+--- a/src/minify.rs
++++ b/src/minify.rs
+@@ -60,10 +60,12 @@ impl Minifier {
+         plan: &MinifyPlan,
+     ) -> Result<String> {
+         let mut plan_map: HashMap<String, FunctionPlan> = HashMap::new();
++        let mut invalid_plan = false;
+ 
+         for function_plan in &plan.functions {
+             if function_plan.range.is_none() {
+-                return Ok(source.to_string());
++                invalid_plan = true;
++                continue;
+             }
+             if function_plan.renames.is_empty() {
+                 continue;
+@@ -71,15 +73,17 @@ impl Minifier {
+             plan_map.insert(function_plan.qualified_name.clone(), function_plan.clone());
+         }
+ 
+-        if plan_map.is_empty() {
+-            return Ok(source.to_string());
+-        }
++        let mut rewritten = source.to_string();
+ 
+-        let suite = ast::Suite::parse(source, module_name)
+-            .map_err(|err| TsrsError::ParseError(err.to_string()))?;
++        if !invalid_plan && !plan_map.is_empty() {
++            let suite = ast::Suite::parse(source, module_name)
++                .map_err(|err| TsrsError::ParseError(err.to_string()))?;
+ 
+-        let rewriter = FunctionRewriter::new(source, &plan_map);
+-        rewriter.rewrite(&suite)
++            let rewriter = FunctionRewriter::new(source, &plan_map);
++            rewritten = rewriter.rewrite(&suite)?;
++        }
++
++        strip_docstrings(module_name, &rewritten)
+     }
+ }
+ 
+@@ -101,6 +105,7 @@ pub struct FunctionPlan {
+     /// Planned replacements paired with their original names.
+     pub renames: Vec<RenameEntry>,
+     /// Names encountered but excluded from renaming (globals, keywords, etc.).
++    #[serde(default)]
+     pub excluded: Vec<String>,
+     /// Optional function source range (byte offsets) to support rewriting.
+     #[serde(skip_serializing_if = "Option::is_none")]
+@@ -113,6 +118,9 @@ pub struct FunctionPlan {
+     pub has_match_statement: bool,
+     #[serde(default)]
+     pub has_comprehension: bool,
++    /// Nested function plans collected recursively.
++    #[serde(default)]
++    pub nested: Vec<FunctionPlan>,
+ }
+ 
+ /// Mapping from an original identifier to a generated replacement.
+@@ -129,27 +137,39 @@ pub struct FunctionRange {
+     pub end: usize,
+ }
+ 
++fn flatten_plan(mut plan: FunctionPlan, out: &mut Vec<FunctionPlan>) {
++    out.push(plan.clone());
++    for child in plan.nested.drain(..) {
++        flatten_plan(child, out);
++    }
++}
++
+ struct Planner {
+     module: String,
+-    functions: Vec<FunctionPlan>,
++    roots: Vec<FunctionPlan>,
+ }
+ 
+ impl Planner {
+     fn new(module: String) -> Self {
+         Self {
+             module,
+-            functions: Vec::new(),
++            roots: Vec::new(),
+         }
+     }
+ 
+     fn finish(self) -> MinifyPlan {
++        let mut functions = Vec::new();
++        for plan in self.roots {
++            flatten_plan(plan, &mut functions);
++        }
++
+         MinifyPlan {
+             module: self.module,
+             keywords: PYTHON_KEYWORDS
+                 .iter()
+                 .map(std::string::ToString::to_string)
+                 .collect(),
+-            functions: self.functions,
++            functions,
+         }
+     }
+ 
+@@ -158,43 +178,55 @@ impl Planner {
+             match stmt {
+                 ast::Stmt::FunctionDef(func) => {
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    let plan =
++                        self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    self.roots.push(plan);
+                 }
+                 ast::Stmt::AsyncFunctionDef(func) => {
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    let plan =
++                        self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    self.roots.push(plan);
+                 }
+                 ast::Stmt::ClassDef(class_def) => {
+-                    let class_name = class_def.name.to_string();
+-                    path.push(class_name);
+-                    self.visit_class(class_def, path);
+-                    path.pop();
++                    let class_plans = self.visit_class_collect(class_def, path);
++                    self.roots.extend(class_plans);
+                 }
+                 _ => {}
+             }
+         }
+     }
+ 
+-    fn visit_class(&mut self, class_def: &ast::StmtClassDef, path: &mut Vec<String>) {
++    fn visit_class_collect(
++        &mut self,
++        class_def: &ast::StmtClassDef,
++        path: &mut Vec<String>,
++    ) -> Vec<FunctionPlan> {
++        path.push(class_def.name.to_string());
++        let mut plans = Vec::new();
+         for stmt in &class_def.body {
+             match stmt {
+                 ast::Stmt::FunctionDef(func) => {
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    let plan =
++                        self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    plans.push(plan);
+                 }
+                 ast::Stmt::AsyncFunctionDef(func) => {
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    let plan =
++                        self.plan_function(&func.name, &func.args, &func.body, path, None, range);
++                    plans.push(plan);
+                 }
+                 ast::Stmt::ClassDef(inner) => {
+-                    let class_name = inner.name.to_string();
+-                    path.push(class_name);
+-                    self.visit_class(inner, path);
+-                    path.pop();
++                    let inner_plans = self.visit_class_collect(inner, path);
++                    plans.extend(inner_plans);
+                 }
+                 _ => {}
+             }
+         }
++        path.pop();
++        plans
+     }
+ 
+     fn plan_function(
+@@ -205,32 +237,17 @@ impl Planner {
+         path: &mut Vec<String>,
+         parent_collector: Option<&mut FunctionCollector>,
+         range: Option<FunctionRange>,
+-    ) {
++    ) -> FunctionPlan {
+         let name_str = name.to_string();
+         if let Some(collector) = parent_collector {
+-            collector.add_name(&name_str);
++            collector.reserve_name(&name_str);
+             collector.mark_nested_function();
+         }
+ 
+         path.push(name_str);
+         let qualified_name = path.join(".");
+-        let insert_index = self.functions.len();
+-        let plan = self.build_function_plan(args, body, path, qualified_name, range);
+-        path.pop();
+ 
+-        self.functions.insert(insert_index, plan);
+-    }
+-
+-    fn build_function_plan(
+-        &mut self,
+-        args: &ast::Arguments,
+-        body: &[ast::Stmt],
+-        path: &[String],
+-        qualified_name: String,
+-        range: Option<FunctionRange>,
+-    ) -> FunctionPlan {
+         let mut reserved = default_reserved();
+-
+         let (globals, nonlocals) = collect_declared_names(body);
+         for name in globals.iter().chain(nonlocals.iter()) {
+             reserved.insert(name.clone());
+@@ -241,10 +258,13 @@ impl Planner {
+         collector.record_exclusions(globals.into_iter());
+         collector.record_exclusions(nonlocals.into_iter());
+ 
+-        let mut path_buffer = path.to_vec();
+-        self.collect_in_function(&mut collector, body, &mut path_buffer);
++        let nested = self.collect_in_function(&mut collector, body, path);
+ 
+-        collector.into_plan(qualified_name, range)
++        let mut plan = collector.into_plan(qualified_name, range);
++        plan.nested = nested;
++
++        path.pop();
++        plan
+     }
+ 
+     #[allow(clippy::too_many_lines)]
+@@ -253,7 +273,8 @@ impl Planner {
+         collector: &mut FunctionCollector,
+         body: &[ast::Stmt],
+         path: &mut Vec<String>,
+-    ) {
++    ) -> Vec<FunctionPlan> {
++        let mut nested_plans = Vec::new();
+         for stmt in body {
+             match stmt {
+                 ast::Stmt::FunctionDef(func) => {
+@@ -262,7 +283,7 @@ impl Planner {
+                         collector.reserve_name(&name);
+                     }
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(
++                    let plan = self.plan_function(
+                         &func.name,
+                         &func.args,
+                         &func.body,
+@@ -270,6 +291,7 @@ impl Planner {
+                         Some(collector),
+                         range,
+                     );
++                    nested_plans.push(plan);
+                 }
+                 ast::Stmt::AsyncFunctionDef(func) => {
+                     let captured = collect_used_names_in_async_function(func, 0);
+@@ -277,7 +299,7 @@ impl Planner {
+                         collector.reserve_name(&name);
+                     }
+                     let range = Some(range_from_node(func));
+-                    self.plan_function(
++                    let plan = self.plan_function(
+                         &func.name,
+                         &func.args,
+                         &func.body,
+@@ -285,6 +307,7 @@ impl Planner {
+                         Some(collector),
+                         range,
+                     );
++                    nested_plans.push(plan);
+                 }
+                 ast::Stmt::ClassDef(class_def) => {
+                     let captured = collect_used_names_in_class(class_def, 1);
+@@ -292,11 +315,10 @@ impl Planner {
+                         collector.reserve_name(&name);
+                     }
+                     let class_name = class_def.name.to_string();
+-                    collector.add_name(&class_name);
++                    collector.reserve_name(&class_name);
+                     collector.mark_nested_function();
+-                    path.push(class_name);
+-                    self.visit_class(class_def, path);
+-                    path.pop();
++                    let class_plans = self.visit_class_collect(class_def, path);
++                    nested_plans.extend(class_plans);
+                 }
+                 ast::Stmt::Assign(assign) => {
+                     for target in &assign.targets {
+@@ -372,6 +394,11 @@ impl Planner {
+                         self.collect_in_function(collector, &handler.body, path);
+                     }
+                 }
++                ast::Stmt::Return(ret) => {
++                    if let Some(value) = &ret.value {
++                        collector.collect_from_expression(value);
++                    }
++                }
+                 ast::Stmt::Match(match_stmt) => {
+                     collector.has_match_statement = true;
+                     for case in &match_stmt.cases {
+@@ -419,6 +446,7 @@ impl Planner {
+                 _ => {}
+             }
+         }
++        nested_plans
+     }
+ }
+ 
+@@ -620,7 +648,10 @@ impl UsedNameCollector {
+         if let Some(returns) = &func.returns {
+             self.visit_expr(returns, depth);
+         }
+-        let body_depth = depth.saturating_sub(1);
++        if depth == 0 {
++            return;
++        }
++        let body_depth = depth - 1;
+         self.visit_suite(&func.body, body_depth);
+     }
+ 
+@@ -632,7 +663,10 @@ impl UsedNameCollector {
+         if let Some(returns) = &func.returns {
+             self.visit_expr(returns, depth);
+         }
+-        let body_depth = depth.saturating_sub(1);
++        if depth == 0 {
++            return;
++        }
++        let body_depth = depth - 1;
+         self.visit_suite(&func.body, body_depth);
+     }
+ 
+@@ -646,7 +680,10 @@ impl UsedNameCollector {
+         for keyword in &class_def.keywords {
+             self.visit_expr(&keyword.value, depth);
+         }
+-        let body_depth = depth.saturating_sub(1);
++        if depth == 0 {
++            return;
++        }
++        let body_depth = depth - 1;
+         self.visit_suite(&class_def.body, body_depth);
+     }
+ 
+@@ -871,6 +908,7 @@ struct FunctionCollector {
+     seen: HashSet<String>,
+     excluded: HashSet<String>,
+     reserved: HashSet<String>,
++    declared_exclusions: HashSet<String>,
+     has_nested_functions: bool,
+     has_imports: bool,
+     has_match_statement: bool,
+@@ -884,6 +922,7 @@ impl FunctionCollector {
+             seen: HashSet::new(),
+             excluded: HashSet::new(),
+             reserved,
++            declared_exclusions: HashSet::new(),
+             has_nested_functions: false,
+             has_imports: false,
+             has_match_statement: false,
+@@ -894,19 +933,32 @@ impl FunctionCollector {
+     fn collect_parameters(&mut self, args: &ast::Arguments) {
+         for param in &args.posonlyargs {
+             self.add_name(param.def.arg.as_ref());
++            if let Some(default) = &param.default {
++                self.collect_from_expression(default);
++            }
+         }
+         for param in &args.args {
+             self.add_name(param.def.arg.as_ref());
++            if let Some(default) = &param.default {
++                self.collect_from_expression(default);
++            }
+         }
+         if let Some(vararg) = &args.vararg {
+             self.add_name(vararg.arg.as_ref());
+         }
+         for param in &args.kwonlyargs {
+             self.add_name(param.def.arg.as_ref());
++            if let Some(default) = &param.default {
++                self.collect_from_expression(default);
++            }
+         }
+         if let Some(kwarg) = &args.kwarg {
+             self.add_name(kwarg.arg.as_ref());
+         }
++
++        for default in args.defaults() {
++            self.collect_from_expression(default);
++        }
+     }
+ 
+     fn record_exclusions<I>(&mut self, iter: I)
+@@ -914,6 +966,7 @@ impl FunctionCollector {
+         I: Iterator<Item = String>,
+     {
+         for name in iter {
++            self.declared_exclusions.insert(name.clone());
+             self.reserve_name(&name);
+         }
+     }
+@@ -1095,19 +1148,23 @@ impl FunctionCollector {
+                 self.mark_nested_function();
+             }
+             ast::Expr::ListComp(expr) => {
++                self.has_comprehension = true;
+                 self.collect_from_expression(&expr.elt);
+                 self.collect_from_comprehension_generators(&expr.generators);
+             }
+             ast::Expr::SetComp(expr) => {
++                self.has_comprehension = true;
+                 self.collect_from_expression(&expr.elt);
+                 self.collect_from_comprehension_generators(&expr.generators);
+             }
+             ast::Expr::DictComp(expr) => {
++                self.has_comprehension = true;
+                 self.collect_from_expression(&expr.key);
+                 self.collect_from_expression(&expr.value);
+                 self.collect_from_comprehension_generators(&expr.generators);
+             }
+             ast::Expr::GeneratorExp(expr) => {
++                self.has_comprehension = true;
+                 self.collect_from_expression(&expr.elt);
+                 self.collect_from_comprehension_generators(&expr.generators);
+             }
+@@ -1138,7 +1195,11 @@ impl FunctionCollector {
+             });
+         }
+ 
+-        let mut excluded: Vec<String> = self.excluded.into_iter().collect();
++        let mut excluded: Vec<String> = self
++            .excluded
++            .union(&self.declared_exclusions)
++            .cloned()
++            .collect();
+         excluded.sort();
+         excluded.dedup();
+ 
+@@ -1152,6 +1213,7 @@ impl FunctionCollector {
+             has_imports: self.has_imports,
+             has_match_statement: self.has_match_statement,
+             has_comprehension: self.has_comprehension,
++            nested: Vec::new(),
+         }
+     }
+ }
+@@ -1301,9 +1363,7 @@ impl<'a> FunctionRewriter<'a> {
+             if plan.has_match_statement {
+                 self.abort = true;
+             } else {
+-                if plan.has_comprehension {
+-                    self.abort = true;
+-                } else {
++                if !plan.has_comprehension {
+                     self.rewrite_with_plan(plan, args, returns, body);
+                 }
+             }
+@@ -1368,6 +1428,103 @@ impl<'a> FunctionRewriter<'a> {
+     }
+ }
+ 
++fn strip_docstrings(module_name: &str, source: &str) -> Result<String> {
++    let suite = ast::Suite::parse(source, module_name)
++        .map_err(|err| TsrsError::ParseError(err.to_string()))?;
++
++    let mut ranges = Vec::new();
++    collect_docstrings_in_suite(source, &suite, &mut ranges);
++
++    if ranges.is_empty() {
++        return Ok(source.to_string());
++    }
++
++    ranges.sort_by(|a, b| b.0.cmp(&a.0));
++
++    let mut stripped = source.to_string();
++    for (start, end) in ranges {
++        stripped.replace_range(start..end, "");
++    }
++
++    Ok(stripped)
++}
++
++fn collect_docstrings_in_suite(source: &str, suite: &[ast::Stmt], ranges: &mut Vec<(usize, usize)>) {
++    if let Some(first) = suite.first() {
++        if is_docstring_stmt(first) {
++            ranges.push(docstring_range(source, first));
++        }
++    }
++
++    for stmt in suite {
++        match stmt {
++            ast::Stmt::FunctionDef(func) => collect_docstrings_in_suite(source, &func.body, ranges),
++            ast::Stmt::AsyncFunctionDef(func) => {
++                collect_docstrings_in_suite(source, &func.body, ranges)
++            }
++            ast::Stmt::ClassDef(class_def) => collect_docstrings_in_suite(source, &class_def.body, ranges),
++            _ => {}
++        }
++    }
++}
++
++fn is_docstring_stmt(stmt: &ast::Stmt) -> bool {
++    match stmt {
++        ast::Stmt::Expr(ast::StmtExpr { value, .. }) => {
++            matches!(
++                value.as_ref(),
++                ast::Expr::Constant(ast::ExprConstant {
++                    value: ast::Constant::Str { .. },
++                    ..
++                })
++            )
++        }
++        _ => false,
++    }
++}
++
++fn docstring_range(source: &str, stmt: &ast::Stmt) -> (usize, usize) {
++    let text_range = stmt.range();
++    let mut start = usize::from(text_range.start());
++    let mut end = usize::from(text_range.end());
++
++    let bytes = source.as_bytes();
++
++    while start > 0 {
++        let previous = bytes[start - 1];
++        if previous == b' ' || previous == b'\t' {
++            start -= 1;
++            continue;
++        }
++        if previous == b'\n' || previous == b'\r' {
++            break;
++        }
++        break;
++    }
++
++    while end < bytes.len() {
++        let current = bytes[end];
++        if current == b' ' || current == b'\t' {
++            end += 1;
++            continue;
++        }
++        if current == b'\r' {
++            end += 1;
++            if end < bytes.len() && bytes[end] == b'\n' {
++                end += 1;
++            }
++            break;
++        }
++        if current == b'\n' {
++            end += 1;
++            break;
++        }
++        break;
++    }
++
++    (start, end)
++}
++
+ struct OccurrenceCollector<'a> {
+     source: &'a str,
+     function_range: &'a FunctionRange,
+@@ -2031,12 +2188,12 @@ def outer():
+ 
+         let outer = &plan.functions[0];
+         assert_eq!(outer.qualified_name, "outer");
+-        assert_eq!(outer.locals, vec!["inner"]);
+-        assert_eq!(outer.renames.len(), 1);
+-        assert_eq!(outer.renames[0].original, "inner");
+-        assert_eq!(outer.renames[0].renamed, "a");
++        assert!(outer.locals.is_empty());
++        assert!(outer.renames.is_empty());
+         assert!(outer.has_nested_functions);
+         assert!(!outer.has_imports);
++        assert_eq!(outer.nested.len(), 1);
++        assert_eq!(outer.nested[0].qualified_name, "outer.inner");
+ 
+         let inner = &plan.functions[1];
+         assert_eq!(inner.qualified_name, "outer.inner");
+@@ -2048,6 +2205,38 @@ def outer():
+         assert!(inner.range.is_some());
+     }
+ 
++    #[test]
++    fn plan_records_globals_and_nonlocals() {
++        let source = r#"
++G = 0
++
++def outer():
++    global G
++    x = 1
++    def inner():
++        nonlocal x
++        return x
++    return x
++"#;
++
++        let plan = Minifier::plan_from_source("sample", source).unwrap();
++        assert_eq!(plan.functions.len(), 2);
++
++        let outer = plan
++            .functions
++            .iter()
++            .find(|f| f.qualified_name == "outer")
++            .expect("outer plan present");
++        assert!(outer.excluded.contains(&"G".to_string()));
++
++        let inner = plan
++            .functions
++            .iter()
++            .find(|f| f.qualified_name == "outer.inner")
++            .expect("inner plan present");
++        assert!(inner.excluded.contains(&"x".to_string()));
++    }
++
+     #[test]
+     fn rewrite_nested_functions_preserves_closure() {
+         let source = r#"
+@@ -2061,12 +2250,11 @@ def outer(value):
+ "#;
+ 
+         let rewritten = Minifier::rewrite_source("sample", source).unwrap();
+-        dbg!(&rewritten);
+         assert!(rewritten.contains("def outer(a):"));
+-        assert!(rewritten.contains("def b(a):"));
++        assert!(rewritten.contains("def inner(a):"));
+         assert!(rewritten.contains("captured = a * 2"));
+         assert!(rewritten.contains("b = captured + a"));
+-        assert!(rewritten.contains("c = b(a)"));
++        assert!(rewritten.contains("b = inner(a)"));
+     }
+ 
+     #[test]
+@@ -2125,9 +2313,9 @@ def wrapper(value):
+ 
+         let rewritten = Minifier::rewrite_source("sample", source).unwrap();
+         assert!(rewritten.contains("def wrapper(value):"));
+-        assert!(rewritten.contains("def a(a):"));
++        assert!(rewritten.contains("def inner(a):"));
+         assert!(rewritten.contains("return a + value"));
+-        assert!(rewritten.contains("return a(value)"));
++        assert!(rewritten.contains("return inner(value)"));
+     }
+ 
+     #[test]
+@@ -2185,24 +2373,7 @@ def transform(data, offset):
+ "#;
+ 
+         let rewritten = Minifier::rewrite_source("sample", source).unwrap();
+-        assert!(rewritten.contains("def transform(a, b):"));
+-        assert!(rewritten.contains("c = b - 1"));
+-        assert!(rewritten.contains("[value + b for value in a if value > c]"));
+-    }
+-
+-    #[test]
+-    fn rewrite_skips_annotation_renames() {
+-        let source = r#"
+-def annotate(value: value) -> value:
+-    alias: value = value
+-    extra: value = alias
+-    return extra
+-"#;
+-
+-        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
+-        assert!(rewritten.contains("def annotate(a: value) -> value:"));
+-        assert!(rewritten.contains("b: value = a"));
+-        assert!(rewritten.contains("c: value = b"));
++        assert_eq!(rewritten, source);
+     }
+ 
+     #[test]
+@@ -2227,7 +2398,33 @@ def outer(value):
+         assert!(rewritten.contains("total = a + counter"));
+         assert!(rewritten.contains("counter = total"));
+         assert!(rewritten.contains("total = total + 1"));
+-        assert!(rewritten.contains("def b():"));
++        assert!(rewritten.contains("def inner():"));
++    }
++
++    #[test]
++    fn annassign_annotation_not_renamed() {
++        let source = r#"
++def assign(value):
++    data: value = value
++    return data
++"#;
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(rewritten.contains("def assign(a):"));
++        assert!(rewritten.contains("b: value = a"));
++        assert!(rewritten.contains("return b"));
++    }
++
++    #[test]
++    fn arg_annotation_not_renamed() {
++        let source = r#"
++def annotate(value: value) -> value:
++    return value
++"#;
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(rewritten.contains("def annotate(a: value) -> value:"));
++        assert!(rewritten.contains("return a"));
+     }
+ 
+     #[test]
+@@ -2265,6 +2462,140 @@ def combine(a):
+         assert!(rewritten.contains("return y.safe_load(c)"));
+     }
+ 
++    #[test]
++    fn rewrite_strips_module_and_function_docstrings() {
++        let source = "\"\"\"Module doc\"\"\"\n\n\ndef demo(value):\n    \"\"\"Function doc\"\"\"\n    return value\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        let expected = r#"
++
++def demo(a):
++    return a
++"#;
++        assert_eq!(rewritten, expected);
++    }
++
++    #[test]
++    fn rewrite_strips_class_docstrings() {
++        let source = "\"\"\"Module doc\"\"\"\n\n\nclass Demo:\n    \"\"\"Class doc\"\"\"\n\n    def value(self):\n        \"\"\"Method doc\"\"\"\n        return 1\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        let expected = r#"
++
++class Demo:
++
++    def value(self):
++        return 1
++"#;
++        assert_eq!(rewritten, expected);
++    }
++
++    #[test]
++    fn rewrite_preserves_non_docstring_literals() {
++        let source = r#"
++def demo():
++    helper = "keep me"
++    return helper
++"#;
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(rewritten.contains("= \"keep me\""));
++    }
++
++    #[test]
++    fn rewrite_strips_nested_function_docstrings() {
++        let source = "def outer():\n    \"\"\"Outer doc\"\"\"\n    def inner():\n        \"\"\"Inner doc\"\"\"\n        return 1\n    return inner()\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(!rewritten.contains("Outer doc"));
++        assert!(!rewritten.contains("Inner doc"));
++        assert!(rewritten.contains("def outer():"));
++        assert!(rewritten.contains("def inner():"));
++        assert!(rewritten.contains("return inner()"));
++    }
++
++    #[test]
++    fn rewrite_strips_async_function_docstrings() {
++        let source = "async def fetch():\n    \"\"\"Fetch doc\"\"\"\n    return 1\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(!rewritten.contains("Fetch doc"));
++        assert!(rewritten.contains("async def fetch():"));
++        assert!(rewritten.contains("return 1"));
++    }
++
++    #[test]
++    fn rewrite_strips_docstrings_with_decorators() {
++        let source = "@decorator\nclass Demo:\n    \"\"\"Class doc\"\"\"\n\n    @property\n    def value(self):\n        \"\"\"Property doc\"\"\"\n        return 1\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(rewritten.starts_with("@decorator"));
++        assert!(rewritten.contains("@property"));
++        assert!(rewritten.contains("def value(self):"));
++        assert!(!rewritten.contains("Class doc"));
++        assert!(!rewritten.contains("Property doc"));
++    }
++
++    #[test]
++    fn rewrite_strips_multiline_docstrings_preserving_body() {
++        let source = "def describe():\n    \"\"\"Line one.\n\n    Line two.\n    \"\"\"\n    return \"ok\"\n";
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(!rewritten.contains("Line one"));
++        assert!(rewritten.contains("def describe():"));
++        assert!(rewritten.contains("return \"ok\""));
++    }
++
++    #[test]
++    fn plans_comprehension_sets_flag() {
++        let source = r#"
++def build(nums):
++    return [n * 2 for n in nums]
++"#;
++
++        let plan = Minifier::plan_from_source("sample", source).unwrap();
++        assert_eq!(plan.functions.len(), 1);
++        assert!(plan.functions[0].has_comprehension);
++    }
++
++    #[test]
++    fn rewrite_bails_on_comprehension() {
++        let source = r#"
++def outer(values):
++    total = 0
++    def inner(items):
++        return [item * 2 for item in items]
++    total = total + len(values)
++    return total
++"#;
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        assert!(rewritten.contains("def outer(a):"));
++        assert!(rewritten.contains("b = 0"));
++        assert!(rewritten.contains("def inner(items):"));
++        assert!(rewritten.contains("return [item * 2 for item in items]"));
++        assert!(rewritten.contains("b = b + len(a)"));
++    }
++
++    #[test]
++    fn rewrite_replacements_stable() {
++        let source = r#"
++def demo(alpha, beta):
++    alpha_beta_gamma = alpha + beta
++    alpha_beta = alpha + beta
++    return alpha_beta_gamma + alpha_beta
++"#;
++
++        let rewritten = Minifier::rewrite_source("sample", source).unwrap();
++        let expected = r#"
++def demo(a, b):
++    c = a + b
++    d = a + b
++    return c + d
++"#;
++        assert_eq!(rewritten, expected);
++    }
++
+     #[test]
+     fn rewrite_skips_dotted_import_without_alias() {
+         let source = r#"

@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-check:
+    name: Rust lint & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: genesis_rust_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: genesis_rust_backend
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Unit tests
+        run: cargo test --lib
+
+      - name: Integration tests (testcontainers)
+        run: cargo test --test db_integration --test memory_tests
+
+  liquibase-validate:
+    name: Validate migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: genesis_test
+          POSTGRES_USER: genesis
+          POSTGRES_PASSWORD: genesis_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Liquibase
+        run: |
+          wget -q https://github.com/liquibase/liquibase/releases/download/v4.29.2/liquibase-4.29.2.tar.gz
+          mkdir -p /opt/liquibase
+          tar xzf liquibase-4.29.2.tar.gz -C /opt/liquibase
+          echo "/opt/liquibase" >> $GITHUB_PATH
+
+      - name: Validate changelogs
+        working-directory: migrations
+        run: |
+          liquibase \
+            --url="jdbc:postgresql://localhost:5432/genesis_test" \
+            --username=genesis \
+            --password=genesis_test \
+            --changeLogFile=changelogs/db.changelog-master.yaml \
+            validate
+
+      - name: Run migrations
+        working-directory: migrations
+        run: |
+          liquibase \
+            --url="jdbc:postgresql://localhost:5432/genesis_test" \
+            --username=genesis \
+            --password=genesis_test \
+            --changeLogFile=changelogs/db.changelog-master.yaml \
+            update
+
+      - name: Verify full_ddl.sql is in sync
+        run: |
+          # Normalize function: strip version comments and other pg_dump metadata
+          normalize() {
+            sed '/^-- Dumped from database version/d; /^-- Dumped by pg_dump version/d; /^\\restrict/d; /^\\unrestrict/d; /^SELECT pg_catalog/d; /^SET default_table_access_method/d' "$1"
+          }
+          PGPASSWORD=genesis_test pg_dump \
+            -h localhost -p 5432 -U genesis -d genesis_test \
+            --schema-only --no-owner --no-privileges \
+            --exclude-table='databasechangelog*' \
+            > /tmp/full_ddl_generated.sql
+          normalize migrations/full_ddl.sql > /tmp/full_ddl_repo.sql
+          normalize /tmp/full_ddl_generated.sql > /tmp/full_ddl_ci.sql
+          diff -u /tmp/full_ddl_repo.sql /tmp/full_ddl_ci.sql || \
+            (echo "ERROR: migrations/full_ddl.sql is out of sync. Run scripts/export_ddl.sh and commit the result." && exit 1)
+
+  terraform-plan:
+    name: Terraform plan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9"
+
+      - name: Terraform init
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive

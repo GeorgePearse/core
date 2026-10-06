@@ -1,0 +1,68 @@
+site_name: Copy-Paste Augmentation
+site_description: Rust-based copy-paste augmentation for object detection with Albumentations integration
+site_author: George Pearse
+site_url: https://georgepearse.github.io/rust-copy-paste/
+repo_url: https://github.com/GeorgePearse/rust-copy-paste
+repo_name: rust-copy-paste
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.top
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Architecture: getting-started/architecture.md
+    - Migration Guide (v0.x → v1.x): migration-v1.md
+  - User Guide:
+    - Albumentations Integration: user-guide/albumentations.md
+    - Configuration: user-guide/configuration.md
+    - API Reference: user-guide/api-reference.md
+    - Gemini Integration: gemini.md
+  - Development:
+    - Contributing: development/contributing.md
+    - Building from Source: development/building.md
+    - Testing: development/testing.md
+  - Performance:
+    - Benchmarks: performance/benchmarks.md
+    - Metrics Dashboard: performance/metrics.md
+  - FAQ: faq.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji
+  - admonition
+  - tables
+  - toc:
+      permalink: "#"

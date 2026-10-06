@@ -1,0 +1,89 @@
+name: "Code Quality Rules"
+description: "Tests for code quality requirements in CLAUDE.md"
+instructions_version: "main"
+model_under_test: "claude-3-5-sonnet-20250109"
+metadata:
+  instruction_file: "/home/georgepearse/CLAUDE.md"
+
+test_cases:
+  - description: "Generated code should have type hints"
+    task: |
+      Write a Python function that processes a list of integers and returns the sum.
+      Make sure the code is production-ready.
+    assertions:
+      - type: regex_match
+        target: generated_code
+        description: "Function should have type hints"
+        pattern: "def\s+\w+\([^)]*:\s*\w+\)[^:]*->\s*\w+"
+        severity: error
+
+      - type: code_analysis
+        target: generated_code
+        description: "All functions should have type hints"
+        severity: error
+        metadata:
+          validator: "python_type_check"
+
+  - description: "Generated code should have docstrings"
+    task: |
+      Create a Python class that manages a cache of results.
+      Make sure it's well-documented.
+    assertions:
+      - type: code_analysis
+        target: generated_code
+        description: "Classes and methods should have docstrings"
+        severity: error
+        metadata:
+          validator: "docstring_check"
+
+      - type: must_contain
+        target: generated_code
+        description: "Should use triple-quoted docstrings"
+        pattern: '"""'
+        severity: error
+
+  - description: "Should create OOP code with proper structure"
+    task: |
+      Implement a data processor that validates and transforms JSON data.
+      Use object-oriented design.
+    assertions:
+      - type: regex_match
+        target: generated_code
+        description: "Should define at least one class"
+        pattern: "class\s+\w+"
+        severity: error
+
+      - type: must_contain
+        target: generated_code
+        description: "Should use proper method definitions"
+        pattern: "def __init__"
+        severity: warning
+
+      - type: llm_judge
+        target: generated_code
+        description: "Code follows OOP principles"
+        severity: warning
+        metadata:
+          judge_prompt: |
+            Evaluate if this code follows good object-oriented design principles.
+            Consider encapsulation, single responsibility, and proper naming.
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.7
+
+  - description: "Should add type checking with strict mode"
+    task: |
+      Create a module with functions that process data with multiple types.
+      Ensure it can be validated with mypy.
+    assertions:
+      - type: code_analysis
+        target: generated_code
+        description: "All functions must have type hints"
+        severity: error
+        metadata:
+          validator: "python_type_check"
+
+      - type: must_not_contain
+        target: generated_code
+        description: "Should not use untyped variables"
+        pattern: "# type: ignore"
+        severity: warning

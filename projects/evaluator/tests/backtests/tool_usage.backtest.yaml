@@ -1,0 +1,105 @@
+name: "Tool Usage Rules"
+description: "Tests for CLAUDE.md tool usage conventions"
+instructions_version: "main"
+model_under_test: "claude-3-5-sonnet-20250109"
+metadata:
+  instruction_file: "/home/georgepearse/CLAUDE.md"
+
+test_cases:
+  - description: "Should use uv for Python project setup, not pip"
+    task: |
+      Create a new Python project with the name 'data-processor'.
+      Show me the commands to set it up with dependencies.
+    assertions:
+      - type: must_not_contain
+        target: generated_commands
+        description: "Should not use pip install"
+        pattern: "pip install"
+        severity: error
+
+      - type: must_contain
+        target: generated_commands
+        description: "Should use uv"
+        pattern: "uv"
+        severity: error
+
+      - type: llm_judge
+        target: full_response
+        description: "Overall approach uses modern Python tooling"
+        severity: warning
+        metadata:
+          judge_prompt: |
+            Does the assistant recommend using uv and pyproject.toml for Python project setup?
+            Respond with JSON: {"score": 0-1, "reasoning": "..."}
+          threshold: 0.7
+
+  - description: "Should use rg (ripgrep) instead of grep"
+    task: |
+      I need to find all instances of the word "TODO" in a Python codebase.
+      What command should I use?
+    assertions:
+      - type: must_not_contain
+        target: full_response
+        description: "Should not recommend grep"
+        pattern: "grep "
+        severity: warning
+
+      - type: regex_match
+        target: full_response
+        description: "Should recommend rg (ripgrep)"
+        pattern: "rg\s+.*TODO"
+        severity: error
+
+      - type: must_not_contain
+        target: generated_commands
+        description: "Commands should not use grep"
+        pattern: "grep"
+        severity: error
+
+  - description: "Should use fd for file searches, not find"
+    task: |
+      I need to find all Python files modified in the last week.
+      Write the command for this.
+    assertions:
+      - type: must_not_contain
+        target: generated_commands
+        description: "Should not use find command"
+        pattern: "find "
+        severity: error
+
+      - type: regex_match
+        target: full_response
+        description: "Should recommend fd"
+        pattern: "fd.*\.py"
+        severity: error
+
+      - type: code_analysis
+        target: generated_commands
+        description: "Static check: no bash find"
+        severity: error
+        metadata:
+          validator: "no_bash_find"
+
+  - description: "Should use absolute imports, not relative paths"
+    task: |
+      Create a Python module called 'utils' with a function that loads data.
+      Make sure to show how other modules should import from it.
+    assertions:
+      - type: must_contain
+        target: generated_code
+        description: "Should use absolute imports"
+        pattern: "from utils import"
+        severity: error
+
+      - type: must_not_contain
+        target: generated_code
+        description: "Should not use relative imports"
+        pattern: "from . import"
+        severity: warning
+
+      - type: code_analysis
+        target: generated_code
+        description: "Generated code should not modify sys.path"
+        severity: error
+        metadata:
+          validator: "no_sys_path_modify"

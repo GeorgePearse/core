@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "used-pkg-transitive"
+version = "0.1.0"
+description = "Fixture package that imports its dependency"
+requires-python = ">=3.8"
+dependencies = ["extra-dep"]

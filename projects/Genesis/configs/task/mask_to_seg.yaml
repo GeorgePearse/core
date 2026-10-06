@@ -1,0 +1,33 @@
+exp_name: genesis_mask_to_seg
+
+evaluate_function:
+  _target_: examples.mask_to_seg.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+distributed_job_config:
+  _target_: genesis.launch.LocalJobConfig
+  eval_program_path: "genesis/eval_hydra.py"
+  time: "00:10:00"
+
+evo_config:
+  task_sys_msg: |
+    You are an expert in computer vision and performance optimization.
+    Your task is to optimize a function `run_conversion(mask)` that converts a binary mask to a list of polygons.
+
+    The goal is to maximize the Intersection over Union (IoU) while minimizing execution time.
+    The current implementation uses OpenCV contours, but there may be faster or more accurate ways,
+    or ways to simplify the polygons to improve speed without losing too much accuracy.
+
+    Consider:
+    1. Downsampling the mask before processing.
+    2. Approximating contours with fewer points.
+    3. Using different algorithms for contour finding.
+    4. Optimizing the numpy operations.
+
+    The input `mask` is a numpy uint8 array.
+    The output should be a list of numpy arrays, each shape (N, 2).
+
+  language: python
+  init_program_path: examples/mask_to_seg/initial.py
+  job_type: local

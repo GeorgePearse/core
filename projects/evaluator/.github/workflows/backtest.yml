@@ -1,0 +1,131 @@
+name: Backtest Instructions
+
+on:
+  pull_request:
+    paths:
+      - "tests/backtests/**"
+      - ".github/workflows/backtest.yml"
+      - "src/**"
+      - "pyproject.toml"
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Checkout Main Branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: baseline-code
+
+      - name: Install dependencies (Main)
+        run: |
+          cd baseline-code
+          uv sync
+
+      - name: Run baseline (Main Branch)
+        id: baseline
+        continue-on-error: true
+        run: |
+          cd baseline-code
+          uv run retrocode run \
+            --tests tests/backtests/ \
+            --output /tmp/baseline_results.json
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Install dependencies (Candidate)
+        run: uv sync
+
+      - name: Run candidate (Current Branch)
+        id: candidate
+        continue-on-error: true
+        run: |
+          uv run retrocode run \
+            --tests tests/backtests/ \
+            --output /tmp/candidate_results.json \
+            --html /tmp/candidate_results.html
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Generate comparison
+        run: |
+          uv run retrocode compare \
+            --baseline /tmp/baseline_results.json \
+            --candidate /tmp/candidate_results.json \
+            --output /tmp/comparison.md
+        continue-on-error: true
+
+      - name: Comment PR with results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comparisonResults = 'Comparison not available (workflow failed or no results)';
+            if (fs.existsSync('/tmp/comparison.md')) {
+              comparisonResults = fs.readFileSync('/tmp/comparison.md', 'utf8');
+            }
+
+            const comment = `## 🧪 Backtest Results
+
+            ${comparisonResults.substring(0, 5000)}
+
+            **Full reports available in workflow artifacts.**
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: backtest-results
+          path: |
+            /tmp/candidate_results.html
+            /tmp/candidate_results.json
+            /tmp/baseline_results.json
+            /tmp/comparison.md
+          retention-days: 7
+
+      - name: Check for regressions
+        # Fail if the comparison step failed (exit code 1 from retrocode compare means regressions)
+        # But 'Generate comparison' has continue-on-error: true so it won't stop the job.
+        # We need to check the outcome of that step. 
+        # However, 'steps.comparison.outcome' access requires an id.
+        # Simpler: retrocode compare exits with 1 if regressions.
+        # If we want to fail the job on regressions, we should let it fail?
+        # But we wanted to post the comment first.
+        # So we should check the exit code of the comparison command or check the report content.
+        if: always()
+        run: |
+          # Check if comparison.md exists and contains "Regressions ⚠️"
+          if [ -f /tmp/comparison.md ]; then
+             if grep -q "Regressions ⚠️" /tmp/comparison.md; then
+                echo "❌ Regressions detected!"
+                exit 1
+             fi
+          else
+             echo "❌ Comparison report missing - workflow failed."
+             exit 1
+          fi

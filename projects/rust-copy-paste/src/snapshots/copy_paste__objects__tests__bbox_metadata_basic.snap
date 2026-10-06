@@ -1,0 +1,16 @@
+---
+source: src/objects.rs
+expression: metadata
+---
+- - 4
+  - 5
+  - 14
+  - 15
+  - 7
+  - 12
+- - 20
+  - 25
+  - 32
+  - 33
+  - 2
+  - -30
