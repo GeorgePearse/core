@@ -153,6 +153,9 @@ def sidecar_stats(path: Path, db: Path) -> dict[str, Any]:
         "conflicts": dict(
             q("SELECT method, count(*) FROM mt_conflict GROUP BY method")
         ),
+        "key_by_type": q(
+            "SELECT json_extract(detail,'$.type') t, count(*) c FROM mt_conflict WHERE method='key' GROUP BY t ORDER BY c DESC"
+        ),
         "relations": q(
             "SELECT kind, band, count(*) FROM mt_relation GROUP BY kind, band ORDER BY kind, band"
         ),
@@ -401,6 +404,12 @@ def render(
             f"<code>contradicts</code> (p ≥ 0.5), and <b>{cf.get('compose', 0)}</b> by path composition. "
             f"<b>{len(side['stale_active'])}</b> engrim records are still <code>active</code> although Jev says a newer record supersedes them "
             "with p ≥ 0.8. These are candidates for <code>engrim supersede</code>.</p>"
+            "<p>Key-check conflicts by type: "
+            + ", ".join(f"{esc(t)} {n}" for t, n in side["key_by_type"])
+            + ". Nearly all are <code>deployment_state</code> records of the same service saying it is live at different commits. "
+            "They are snapshot updates, so the newer one supersedes the older, and the key check finds that deterministically with no model call. "
+            "The <code>decision</code> hits are false positives: two different decisions about the same component share the key "
+            "<code>subject</code>, which is too coarse a key for decisions.</p>"
         )
         h.append(
             "<div class=wrap><table><tr><th>Type</th><th>records</th></tr>"
