@@ -64,6 +64,12 @@ def build(out_path: Path) -> None:
     sample = {r["id"]: r for r in json.load((SCRATCH / "spotcheck.json").open())}
     sess_path = SCRATCH / "summary-sessions.json"
     sess = json.load(sess_path.open())["sessions"] if sess_path.exists() else None
+    final_path = SCRATCH / "final-counts.json"
+    if sess and final_path.exists():
+        # the session import ran twice (195 sessions, then 457 after the index fix); the export has the totals
+        exp = json.load(final_path.open())["export"]
+        sess = {**sess, "sessions": exp["session_manifests"], "records_written": exp["session_records"],
+                "seconds": sess["seconds"], "second_run_sessions": 457}
     log = json.load((SCRATCH / "log-size.json").open()) if (SCRATCH / "log-size.json").exists() else {}
     eng = {"state": 2229, "fact": 774, "decision": 149, "feedback": 105, "reference": 58, "user": 2}
     t2k = full["type_to_kind"]
@@ -115,10 +121,12 @@ def build(out_path: Path) -> None:
 
     shots = []
     for name, cap in (
-        ("graph-final.png", "The graph view after the import (1,000-node default window; the legend counts the kinds in view)."),
+        ("graph-progress.png", "The graph view after the memories import (1,000-node default window, newest first; the legend counts the kinds in view: 584 Issues, 139 Experiments, 268 Beliefs, 8 Web results, 1 Code change)."),
+        ("graph-final.png", "The same view after the session log went in: the 652 AgentSessions are the newest rows, so they fill most of the 1,000-node window (196 Issues, 50 Experiments, 93 Beliefs remain in view)."),
         ("belief-465-evidence.png", "Belief#465 (engrim decision #1932): 13 proved_by edges from Experiments, valence +0.5 (green) and one against (red), judgement proven, author confidence 0.76 from Jev's true_now probability."),
         ("issue-502.png", "Issue#502 (engrim state, VLM Chat one-instance rule): produced_by edges from the three consolidation records that share its PR, and Jev-confirmed supersedes edges to the superseded ones."),
-        ("agentsession.png", "One AgentSession from the engrim log: the Claude session envelope with its records (UserMessage / AssistantMessage) readable in the console view."),
+        ("agentsession.png", "AgentSession#97, the largest engrim session (2,642 log rows, vlm-chat-pads, 2026-09-16 to 09-23): the envelope with cli, cli_session_id, started/ended and its records."),
+        ("console-feed.png", "The console feed, which interleaves every imported session's UserMessage / AssistantMessage records oldest-first."),
     ):
         p = SCRATCH / "shots" / name
         if p.exists():
@@ -127,9 +135,10 @@ def build(out_path: Path) -> None:
     sess_html = ""
     if sess:
         sess_html = (
-            f"<p>{sess['sessions']:,} AgentSessions (one per engrim <code>(project, session)</code>), "
-            f"{sess['records_written']:,} IR records written ({sess['records_skipped']:,} already present on re-append), "
-            f"in {sess['seconds']:,} s. Each engrim log row became a <code>UserMessage</code> or "
+            f"<p>{sess['sessions']:,} AgentSessions (one per engrim <code>(project, session)</code>), all <code>complete</code>, "
+            f"{sess['records_written']:,} IR records = every row of the log. Two runs: the first stopped after 195 sessions "
+            f"(each per-session query scanned the 2.5 GB table because <code>raw</code> is inline; a covering index on the copy fixed it), "
+            f"the second did the other {sess.get('second_run_sessions', 457)} in {sess['seconds']:,} s. Each engrim log row became a <code>UserMessage</code> or "
             f"<code>AssistantMessage</code> (timestamp, content, extra = engrim log id, msg uuid, role) through "
             f"<code>trackinizer.types.session_records.SessionRecordRow</code> and <code>append_records</code>; "
             f"<code>cli</code> = claude (every raw line is Claude Code JSONL), <code>started</code>/<code>ended</code> = min/max ts, "
