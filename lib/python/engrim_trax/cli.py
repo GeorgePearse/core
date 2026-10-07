@@ -1,6 +1,6 @@
 """engrim -> trackinizer importer.
 
-    python -m engrim_trax.cli import --db COPY.db --server http://127.0.0.1:8766 [--limit 50] [--sessions]
+    python -m engrim_trax.cli import --db COPY.db --server http://127.0.0.1:8090 [--limit 50] [--sessions]
     python -m engrim_trax.cli report --db COPY.db --server ...
     python -m engrim_trax.cli spotcheck --db COPY.db --n 40 --seed 7
     python -m engrim_trax.cli wipe --datadir /var/tmp/engrim-trax/pgdata --tmux engrim-trax:server
@@ -172,7 +172,7 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", default=str(SCRATCH / "memory.db"))
-    common.add_argument("--server", default="http://127.0.0.1:8766")
+    common.add_argument("--server", default="http://127.0.0.1:8090")
     common.add_argument("--idmap", default=str(SCRATCH / "idmap.json"))
     common.add_argument("--answers", default=str(SCRATCH / "jev_answers.jsonl"))
 
@@ -197,7 +197,7 @@ def main(argv=None) -> int:
     w = sub.add_parser("wipe", parents=[common])
     w.add_argument("--datadir", default=str(SCRATCH / "pgdata"))
     w.add_argument("--tmux", default="engrim-trax:server")
-    w.add_argument("--port", type=int, default=8766)
+    w.add_argument("--port", type=int, default=8090)
     w.set_defaults(fn=cmd_wipe)
 
     a = p.parse_args(argv)

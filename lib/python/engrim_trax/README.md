@@ -65,7 +65,7 @@ and counts what it dropped.
 
 ```bash
 sqlite3 ~/.engrim/memory.db ".backup /var/tmp/engrim-trax/memory.db"
-trackinizer --no-auth --host 127.0.0.1 --port 8766 --datadir /var/tmp/engrim-trax/pgdata
+trackinizer --no-auth --host 127.0.0.1 --port 8090 --datadir /var/tmp/engrim-trax/pgdata
 export AI_GATEWAY_API_KEY=...
 uv run --with trackinizer python -m engrim_trax.cli import --limit 50          # first pass
 uv run --with trackinizer python -m engrim_trax.cli import --sessions          # everything
