@@ -61,7 +61,7 @@ script-files = ["lib/python/genesis/genesis_launch", "lib/python/genesis/genesis
 
 [tool.setuptools.packages.find]
 where = ["lib/python"]
-include = ["genesis", "genesis.*", "squeeze", "squeeze.*", "memtype", "memtype.*"]
+include = ["genesis", "genesis.*", "squeeze", "squeeze.*", "memtype", "memtype.*", "engrim_trax", "engrim_trax.*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
