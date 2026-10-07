@@ -41,7 +41,16 @@ class SessionInfo:
         return f"claude session {self.session[:8]} in {self.project_name}: {head or '(no user message)'}"
 
 
+def ensure_index(db_path: str | Path) -> None:
+    """A covering index on the COPY: `raw` is 2.5 GB inline, so any per-session query without it scans the file."""
+    conn = sqlite3.connect(Path(db_path))
+    conn.execute("CREATE INDEX IF NOT EXISTS log_cover ON log(project, session, ts, id, role, content, msg_uuid)")
+    conn.commit()
+    conn.close()
+
+
 def list_sessions(db_path: str | Path) -> list[SessionInfo]:
+    ensure_index(db_path)
     conn = sqlite3.connect(f"file:{Path(db_path)}?mode=ro", uri=True)
     multi = {
         s for (s,) in conn.execute("SELECT session FROM log GROUP BY session HAVING count(DISTINCT project) > 1")
