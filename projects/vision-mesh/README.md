@@ -5,8 +5,9 @@ directly predicts the structured representation used by vision-harness, includin
 `part_of` relationships.
 
 This is a dedicated project in George Pearse's personal core. **Status: project
-definition.** There is no trained model, inference implementation, or measured
-latency yet.
+definition with a tested offline contract scaffold.** A dependency-free decoder
+converts supplied query and parent scores to the located harness input. There is
+no trained model, image inference implementation, or measured latency yet.
 
 ## Intended behavior
 
@@ -25,14 +26,19 @@ vision-harness is the authority for the output schema. Reuse its entity identity
 geometry, labels, relation direction, uncertainty, and serialization conventions.
 Do not introduce a competing public scene-graph format in this project.
 
-The harness source and exact schema revision have not yet been located. Only the
-requirement to predict object parts and `part_of` is confirmed. Other relationship
-types, required fields, coordinate conventions, and parent cardinality must be
-read from the actual harness before implementing the model adapter.
+The located API is `visia_vision_agent_mcp.part_graph`, pinned to VisiaAI/core
+`fcb664472e2313be15a7f42b659997809a9a55df`. It accepts call-local `PartObject`
+records with boxes, existing class names/IDs and optional single-parent `part_of`
+links; it rejects self-links and cycles. Its consumer uses stable annotation IDs
+and recomputed dotted display numbers. The exact name “vision-harness” remains
+unconfirmed; the synthetic harnesses contain this API but concern generation and
+scoring. See [the contract evidence and commands](CONTRACT.md) for source paths,
+field semantics, fixtures, provenance and verification limits.
 
-The first integration fixture should be a real harness example, pinned to its
-source revision, with two same-class objects, their parts, and a nested part.
-Preserve the harness's behavior for absent, uncertain, and out-of-frame parents.
+Original upstream fixtures and a separate authored repeated-object/nested-part
+case exercise the offline decoder and actual pure consumer functions. They are
+test fixtures, not reviewed training data. The harness has no explicit uncertain
+parent field and omits absent parents from the read graph.
 The following is a semantic illustration, **not a JSON/API contract**:
 
 ```text
@@ -51,9 +57,9 @@ queries. Share image features between objects and parts. Each query predicts
 presence, class, geometry, and an embedding used by a relationship head.
 
 The relationship head scores candidate links between instance queries, including
-`part_of`. If the harness permits only one parent, use a parent-pointer head with
-an explicit no-parent outcome. If it permits multiple parents, use independent
-edge scores instead. Match this choice to the harness contract before training.
+`part_of`. The located contract permits one parent, so use a parent-pointer head
+with an explicit no-parent outcome. The scaffold already decodes this head's
+supplied scores; the head itself still needs implementation and training.
 With Q instance queries, all-pairs edge scoring costs O(Q²); measure its latency
 and memory contribution and keep Q explicit in every benchmark.
 
@@ -62,11 +68,10 @@ assigns IDs, filters predictions, and serializes the harness structure. Parent
 selection must come from learned scores. Do not infer membership solely from box
 containment, proximity, or an LLM call after detection.
 
-Geometry heads must match the harness's requirements: boxes alone are insufficient
-if its consumer requires masks or another representation. Enforce referential
-integrity after filtering entities and any acyclicity or cardinality constraints
-the harness specifies. Report invalid raw predictions separately so decoding
-does not hide structural errors.
+The located contract requires boxes and permits optional polygons. The scaffold
+emits normalized boxes and rejects self-links, cycles and links to filtered
+parents, preserving structural failures for inspection. Polygons, captions and
+learned uncertainty are future outputs if the selected application needs them.
 
 ## Training data and objectives
 
@@ -109,12 +114,14 @@ Keep raw outputs and a browsable report showing both successes and failures.
 
 ## Implementation sequence
 
-1. Locate and pin the harness schema; add a real fixture and consumer round-trip.
+1. **Complete offline:** pin the located part-graph contract, replay its original
+   fixtures, decode supplied parent scores, and exercise its pure consumer helpers.
 2. Implement the dataset reader and review a small object/part/relationship set.
 3. Build the compact shared encoder, instance heads, and learned relationship head.
 4. Train a bounded baseline and evaluate quality, structural validity, and speed.
 5. Export the model and verify the complete image-to-harness path on the target device.
 
-These are planned milestones, not completed capabilities. Backbone selection,
+Milestones 2–5 remain planned. A database round-trip and live surface rendering
+have not been exercised. Backbone selection,
 training runs, accelerator allocation, and deployment are separate implementation
 decisions once the harness contract and benchmark target are available.

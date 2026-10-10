@@ -1,0 +1,61 @@
+{
+  "objects": [
+    {
+      "key": "e1",
+      "box": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "key": "e1.alt",
+      "box": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "part_of": "e1"
+    },
+    {
+      "key": "e1.alt.pulley",
+      "box": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "part_of": "e1.alt"
+    },
+    {
+      "key": "hose",
+      "box": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "part_of": "#3.1"
+    },
+    {
+      "key": "pipe",
+      "box": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "part_of": 7
+    }
+  ],
+  "provenance": {
+    "repository": "https://github.com/VisiaAI/core",
+    "commit": "fcb664472e2313be15a7f42b659997809a9a55df",
+    "path": "lib/python/vision_agent_mcp/tests/test_part_graph.py",
+    "test": "test_links_resolve_keys_and_existing_ids",
+    "source_sha256": "e2d90c0badf17fa3a12ce40d1c6b93ba6eecda302e57e898a094be3e54169818",
+    "kind": "upstream unit-test fixture, not reviewed training data"
+  }
+}

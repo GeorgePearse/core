@@ -1,0 +1,47 @@
+{
+  "objects": [
+    {
+      "number": "1",
+      "id": 1,
+      "label": "engine block",
+      "box": [
+        0.1,
+        0.1,
+        0.6,
+        0.8
+      ],
+      "depth": 0,
+      "parts": 1,
+      "caption": "V8 block"
+    },
+    {
+      "number": "1.1",
+      "id": 2,
+      "label": "alternator",
+      "box": [
+        0.4,
+        0.2,
+        0.5,
+        0.3
+      ],
+      "depth": 1,
+      "parts": 0,
+      "part_of": 1
+    }
+  ],
+  "edges": [
+    {
+      "kind": "part_of",
+      "source": 2,
+      "target": 1
+    }
+  ],
+  "provenance": {
+    "repository": "https://github.com/VisiaAI/core",
+    "commit": "fcb664472e2313be15a7f42b659997809a9a55df",
+    "path": "lib/python/vision_agent_mcp/tests/test_part_graph.py",
+    "test": "test_render_draws_dotted_links_and_the_surface_validates",
+    "source_sha256": "e2d90c0badf17fa3a12ce40d1c6b93ba6eecda302e57e898a094be3e54169818",
+    "kind": "upstream unit-test fixture, not reviewed training data"
+  }
+}
