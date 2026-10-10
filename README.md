@@ -4,7 +4,8 @@ Integrate this in too https://github.com/aleph-alpha/ts-rs
 
 - [vision-mesh](projects/vision-mesh/README.md): a lightweight, fast model for
   objects, parts, and direct prediction of vision-harness structure, including
-  `part_of` relationships. Currently a project specification.
+  `part_of` relationships. Includes a pinned contract and tested offline decoder;
+  model training and speed measurements remain future work.
 
 <h1 align="center">
   <a href="docs/genesis-logo.png?raw=true">
