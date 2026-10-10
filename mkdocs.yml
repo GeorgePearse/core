@@ -86,6 +86,7 @@ nav:
       - Dev Environment: devenv.md
       - Roadmap: roadmap.md
   - Research:
+      - vision-mesh: vision-mesh.md
       - Recent Papers: papers.md
       - DSPy Integration Ideas: dspy_integration.md
       - OpenR Integration: openr_integration.md
