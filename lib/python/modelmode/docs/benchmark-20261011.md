@@ -50,3 +50,19 @@ mismatch before training.
 
 Data: PolyAI BANKING77, distributed under CC BY 4.0; this benchmark selects a subset,
 deduplicates normalized inputs and adds a validation split.
+
+## Neural-only publication check
+
+A second, disjoint cohort uses alphabetic labels 13–16 (`card_arrival`,
+`card_delivery_estimate`, `card_linking`, `card_not_working`): 412 train, 103
+validation and 160 test examples. With only BERT-tiny as the learned candidate,
+four epochs produced **89.39% test macro F1**, versus the dummy's 10%.
+This verifies neural-model publication; it is not a comparison with the 12-intent
+results above. Its final test is also sealed.
+
+The updated remote implementation hash matched the installed package. A new MCP
+process then loaded capability `neural_intent`, version 1, with Hugging Face and
+Transformers offline modes enabled. It correctly classified the two smoke inputs
+as `card_linking` and `card_not_working`. The complete
+[verification receipt](https://storage.googleapis.com/binit-public/modelmode/20261011/neural-verification.json)
+includes dataset provenance, the remote call ID, checksums, parameters and metrics.
