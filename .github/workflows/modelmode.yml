@@ -1,0 +1,42 @@
+name: ModelMode
+
+on:
+  pull_request:
+    paths:
+      - 'lib/python/modelmode/**'
+      - '.github/workflows/modelmode.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/python/modelmode/**'
+      - '.github/workflows/modelmode.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: lib/python/modelmode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+      - name: Install CPU dependencies
+        run: |
+          uv venv
+          uv pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          uv pip install -e '.[train,modal,dev]'
+      - name: Lint
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
+      - name: Test offline lifecycle and neural training
+        run: .venv/bin/pytest -q
+      - name: Build distributable
+        run: uv build --out-dir /tmp/modelmode-dist

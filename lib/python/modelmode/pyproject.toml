@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modelmode"
+version = "0.1.0"
+description = "Teach, evaluate and publish small local models through MCP"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+  "scikit-learn==1.7.1",
+  "numpy==2.2.6",
+  "scipy==1.15.3",
+  "joblib==1.5.2",
+  "mcp==1.26.0",
+  "pydantic==2.12.5",
+  "threadpoolctl==3.6.0",
+]
+
+[project.optional-dependencies]
+static = ["model2vec==0.7.0"]
+transformers = ["sentence-transformers==5.1.2"]
+train = ["torch==2.8.0", "transformers==4.57.1", "huggingface-hub==0.36.0"]
+modal = ["modal==1.4.1"]
+dev = ["pytest==8.3.3", "pytest-asyncio==0.25.3", "ruff==0.8.0"]
+
+[project.scripts]
+modelmode = "modelmode.cli:main"
+modelmode-mcp = "modelmode.server:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
